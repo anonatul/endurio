@@ -11,9 +11,24 @@ router.get("/strava", async (req, res) => {
 
 // ToDo - add error handling
 router.get("/strava/callback", async (req, res) => {
-    const authCode = req.query.code;
 
-    const data = await fetch('https://www.strava.com/api/v3/oauth/token', {
+    try {
+        const authCode = req.query.code;
+        const error = req.query.error;
+
+        if(error === 'access_denied') {
+            return res.status(403).json({
+                error: 'User denied authorization'
+            });
+        }
+
+        if(!authCode) {
+            return res.status(400).json({
+                error: 'No authorization code provided'
+            });
+        }
+
+        const data = await fetch('https://www.strava.com/api/v3/oauth/token', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -24,14 +39,23 @@ router.get("/strava/callback", async (req, res) => {
             code: authCode,
             grant_type: 'authorization_code'
         })
-    }).then(response => response.json());
-
-    // need to remove this as it responding the token to the client, browsers
-    res.json({
-        data
+    }).then(response => {
+        if(!response.ok) throw new Error('Failed to exchange token with Strava');
+        return response.json();
     });
 
+    res.json({
+        message: 'Successfully authorized!',
+        data
+    });
     // ToDo - Store token info and athelete info directly to Database
+
+    } catch (error) {
+        console.error("Strava OAuth Error:", error);
+        res.status(500).json({
+            error: 'Internal Server Error during Strava authentication'
+        });
+    }
 });
 
 export default router;
