@@ -54,6 +54,8 @@ router.get("/strava/callback", async (req, res) => {
         await query('DELETE FROM strava_tokens WHERE user_id = $1', [userId]);
         await query('INSERT INTO strava_tokens (user_id, access_token, refresh_token, expires_at) VALUES ($1, $2, $3, to_timestamp($4))', [userId, access_token, refresh_token, expires_at]);
 
+        req.session.userId = userId;
+        
         res.json({
             message: 'Successfully authorized!',
             athlete: {
