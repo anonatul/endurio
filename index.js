@@ -4,6 +4,7 @@ import pool from './src/db/pool.js';
 import session from 'express-session';
 import genStore from 'connect-pg-simple';
 import authRoutes from './src/routes/authRoutes.js';
+import activityRoutes from './src/routes/activityRoutes.js';
 import { verifyDatabaseConnection } from './src/db/pool.js';
 
 config();
@@ -14,7 +15,7 @@ const app = express();
 // ----------------------------------------------------------
 // |       Session management with PostgreSQL store         |
 // ----------------------------------------------------------
-// I LEARNED ONE THING: so its uses database to store session data,
+// WAHT I LEARNED NEW HERE: so its uses database to store session data,
 // which is more secure than defualt memory store, cause whenever server restarts,
 // all sessions which are stored in memeory will be lost 
 
@@ -44,7 +45,11 @@ app.get("/", (req, res) => {
     });
 });
 
+// ----- Auth Routes ----- 
 app.use("/api/auth", authRoutes);
+
+// ----- Activity Routes ----- 
+app.use("/api/activities", activityRoutes)
 
 const server = app.listen(3000, () => {
     console.log("Server is listening to 3000");

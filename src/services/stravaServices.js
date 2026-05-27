@@ -35,3 +35,63 @@ export const exchangeCodeForToken = async (authCode) => {
         throw new Error('Failed to exchange code for token');
     }
 };
+
+// This function will fetch all activities of the user from strava, and return an array of activities
+// I will implement the logic to store these activities in the database later, 
+// for now I just want to test if I can fetch the activities from strava successfully
+export const syncUserActivities = async (token) => {
+    try {
+        let page = 1;
+        const perPage = 200;
+        let length = Infinity;
+
+        let allActivities = [];
+
+        console.log('Starting to sync Strava activities...');
+        while(length !== 0) {
+            
+            const activities = await fetch(`https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${String(token)}`
+                }
+            }).then(res => res.json());
+
+            length = activities.length;
+            page++;
+
+            allActivities.push(...activities);
+            console.log(`Fetched ${length} activities from Strava (Page ${page - 1})`);
+        }
+
+        const {
+            id,
+            sport_type,
+            start_date,
+            distance,
+            moving_time,
+            elapsed_time,
+            average_speed,
+            max_speed,
+            has_heartrate,
+            total_elevation_gain,
+            workout_type
+        } = allActivities[0];
+
+        return {
+            id,
+            sport_type,
+            start_date,
+            distance,
+            moving_time,
+            elapsed_time,
+            average_speed,
+            max_speed,
+            has_heartrate,
+            total_elevation_gain,
+            workout_type
+        };
+    } catch (error) {
+        console.error('Error syncing strava activites: ', error);
+    }
+};
