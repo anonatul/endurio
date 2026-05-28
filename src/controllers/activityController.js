@@ -14,20 +14,17 @@ export const syncActivities = async (req, res) => {
 
     try {
         const token = await getValidToken(userId);
-        // const count = await syncUserActivities(token);
-
-        const activity = await syncUserActivities(token);
+        const count = await syncUserActivities(userId, token);
 
         res.json({
             success: true,
-            synced: activity
+            synced: `Successfully synced ${count} activities`
         })
 
     } catch (error) {
         console.error(error);
-
         res.status(500).json({
-            error: 'Sync failed'
+            error: 'Sync failed: ' + error.message
         });
     };
 

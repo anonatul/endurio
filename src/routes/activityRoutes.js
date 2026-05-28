@@ -3,6 +3,6 @@ import { syncActivities } from '../controllers/activityController.js';
 
 const router = express.Router();
 
-router.get("/sync", syncActivities);
+router.post("/sync", syncActivities);
 
 export default router;
