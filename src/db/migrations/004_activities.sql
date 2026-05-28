@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS activities (
     average_heartrate FLOAT,
     max_heartrate FLOAT,
     total_elevation_gain FLOAT NOT NULL,
-    workout_type INTEGER NOT NULL,
+    workout_type INTEGER DEFAULT 0,
     raw_json JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
