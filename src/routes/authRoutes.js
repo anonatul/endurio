@@ -1,4 +1,4 @@
-import express, { response } from 'express';
+import express from 'express';
 import { query } from '../db/pool.js';
 import { stravaAuthCallback } from '../controllers/authController.js';
 

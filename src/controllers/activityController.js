@@ -2,7 +2,6 @@ import { query } from "../db/pool.js";
 import { syncUserActivities } from "../services/stravaServices.js";
 import { getValidToken } from "../utils/stravaToken.js";
 
-
 export const syncActivities = async (req, res) => {
 
     const { userId } = req.session;
@@ -35,7 +34,7 @@ export const getActivities = async (req ,res) => {
     const { userId } = req.session;
     const activityId = req.params.id;
     
-    if(!userId) {
+    if (!userId) {
         return res.status(401).json({
             error: "Unauthorized"
         });
@@ -63,7 +62,7 @@ export const getActivities = async (req ,res) => {
         
         res.status(200).json({
             success: true,
-            total: data.rows.length,
+            pageCount: data.rows.length,
             activities: data.rows
         });
     } catch (error) {
