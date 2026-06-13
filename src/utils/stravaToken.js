@@ -1,6 +1,5 @@
 import { query } from "../db/pool.js";
 
-
 export const getValidToken = async (userId) => {
     const tokenResult = await query('SELECT access_token, refresh_token, expires_at FROM strava_tokens WHERE user_id = $1', [userId]);
 
@@ -12,11 +11,12 @@ export const getValidToken = async (userId) => {
 
     const db_access_token = access_token;
     const db_refresh_token = refresh_token;
+    const expiresAtSec = Math.floor(new Date(expires_at).getTime() / 1000);
 
     const nowInSeconds = Math.floor(Date.now() / 1000);
     const fiveMinutes = 300;
 
-    if(expires_at < (nowInSeconds + fiveMinutes)) {
+    if(expiresAtSec < (nowInSeconds + fiveMinutes)) {
         
         const refreshResponse = await fetch('https://www.strava.com/api/v3/oauth/token', {
             method: 'POST',
