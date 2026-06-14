@@ -6,9 +6,13 @@ import genStore from 'connect-pg-simple';
 import authRoutes from './src/routes/authRoutes.js';
 import activityRoutes from './src/routes/activityRoutes.js';
 import { verifyDatabaseConnection } from './src/db/pool.js';
+import initCronJobs from './src/services/cronServices.js';
 
 config();
 verifyDatabaseConnection();
+
+// intiate cron jobs
+initCronJobs();
 
 const app = express();
 
