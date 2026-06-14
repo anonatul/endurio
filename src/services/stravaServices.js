@@ -1,4 +1,4 @@
-
+import { query } from '../db/pool.js';
 import pool from '../db/pool.js';
 
 export const exchangeCodeForToken = async (authCode) => {
@@ -61,16 +61,12 @@ export const syncUserActivities = async (userId, token) => {
         console.log('Starting to sync Strava activities...');
         while (length !== 0) {
 
-            const res = await fetch(`https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`, {
+            const activities = await fetch(`https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${String(token)}`
                 }
-            });
-            if (!res.ok) {
-                throw new Error(`Strava activities fetch failed: ${res.status}`);
-            }
-            const activities = await res.json();
+            }).then(res => res.json());
 
             length = activities.length;
             page++;
