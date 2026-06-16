@@ -7,6 +7,7 @@ import authRoutes from './src/routes/authRoutes.js';
 import activityRoutes from './src/routes/activityRoutes.js';
 import { verifyDatabaseConnection } from './src/db/pool.js';
 import initCronJobs from './src/services/cronServices.js';
+import statRoutes from './src/routes/statRoutes.js';
 
 config();
 verifyDatabaseConnection();
@@ -55,6 +56,8 @@ app.use("/api/auth", authRoutes);
 // ----- Activity Routes ----- 
 app.use("/api/activities", activityRoutes)
 
+// ----- Activity Routes ----- 
+app.use("/api/stats", statRoutes);
 const server = app.listen(3000, () => {
     console.log("Server is listening to 3000");
 });

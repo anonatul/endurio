@@ -19,7 +19,7 @@ const syncAllUsers = async () => {
 };
 
 const initCronJobs = () => {
-    // I LEARNT: 
+    // WHAT I LEARNT: 
     // cron jobs do not have access to req (request) and res (response) objects 
     // because they are triggered automatically by a time scheduler, 
     // not by an HTTP request from a client browser    
