@@ -86,3 +86,36 @@ export const getActivitySummary = async (req, res) => {
         });
     };
 };
+
+// Longest run in last N weeks
+export const getLongestRun = async (req, res) => {
+    const { userId } = req.session;
+
+    if (!userId) {
+        return res.status(401).json({
+            error: "Unauthorized"
+        })
+    };
+
+    const weeks = req.query.weeks || 4;
+
+    const queryText = `
+               SELECT distance
+               FROM activities 
+               WHERE user_id = $1 AND sport_type = 'Run' AND start_date_local >= NOW() - ($2 * INTERVAL '1 week')
+               ORDER BY distance DESC LIMIT 1;   
+    `;
+    try {
+        const data = await query(queryText, [userId, weeks]);
+        
+        res.status(200).json({
+            success: true,
+            longest_run: data.rows[0].distance / 1000
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            error: "Failed to fetch longest run"
+        });
+    };
+};
