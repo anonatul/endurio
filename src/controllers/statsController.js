@@ -3,7 +3,7 @@ import { query } from "../db/pool.js";
 // Weekly mileage for last N weeks 
 export const getWeeklyMileage = async (req, res) => {
     const { userId } = req.session;
-    const weeks = req.query.weeks;
+    const weeks = req.query.weeks || 4;
 
     if (!userId) {
         return res.status(401).json({
@@ -64,7 +64,7 @@ export const getActivitySummary = async (req, res) => {
         // - ROUND(SUM(moving_time)/3600.0, 1)  AS total_hours: this will sum the moving time in seconds and convert it to hours, rounded to 1 decimal place
         // - SUM(moving_time) / 60.0 / (SUM(distance) / 1000) AS avg_pace_per_km: this will calculate the average pace per kilometer in minutes per kilometer
         // - AVG(average_heartrate) AS avg_hr: this will calculate the average heart rate
-        const data = await query(`SELECT COUNT(*) AS total_runs, SUM(distance)/1000 AS total_distance, ROUND(SUM(moving_time)/3600.0, 1)  AS total_hours, SUM(moving_time) / 60.0 / (SUM(distance) / 1000) AS avg_pace_per_km, AVG(average_heartrate) AS avg_hr from activities WHERE user_id = $1 AND sport_type = 'Run' AND start_date_local >= NOW() - INTERVAL '${days} days';`, [userId]);
+        const data = await query(`SELECT COUNT(*) AS total_runs, SUM(distance)/1000 AS total_distance, ROUND(SUM(moving_time)/3600.0, 1)  AS total_hours, SUM(moving_time) / 60.0 / (SUM(distance) / 1000) AS avg_pace_per_km, AVG(average_heartrate) AS avg_hr from activities WHERE user_id = $1 AND sport_type = 'Run' AND start_date_local >= NOW() - ( $2 * INTERVAL '1 day' );`, [userId, days]);
 
         res.status(200).json({
             success: true,
