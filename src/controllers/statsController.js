@@ -125,3 +125,39 @@ export const getLongestRun = async (req, res) => {
         });
     };
 };
+
+// Get the avergae run per week for last N weeks
+export const getRunningConsistency = async (req, res) => {
+    const { userId } = req.session;
+    
+    if (!userId) {
+        return res.status(401).json({
+            error: "Unauthorized"
+        });
+    };
+
+    const weeks = req.query.weeks || 4;
+
+    const queryText = `SELECT COUNT(*) 
+                       FROM activities
+                       WHERE user_id = $1 AND sport_type = 'Run' AND start_date_local >= NOW() - ($2 * INTERVAL '1 week');
+    `;
+
+    try {
+        const data = await query(queryText, [userId, weeks]);
+        const totalRuns = parseInt(data.rows[0].count, 10);
+        const averageRunsPerWeek = parseInt(totalRuns / weeks, 10);
+
+        res.status(200).json({
+            success: true,
+            weeks: weeks,
+            total_runs: totalRuns,
+            average_runs_per_week: averageRunsPerWeek
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            error: "Failed to fetch average run per weeks"
+        });
+    };
+};
