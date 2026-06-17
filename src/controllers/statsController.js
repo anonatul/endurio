@@ -108,6 +108,12 @@ export const getLongestRun = async (req, res) => {
     try {
         const data = await query(queryText, [userId, weeks]);
         
+        if(data.rows.length === 0 || data.rows[0].distance === null) {
+            return res.status(404).json({
+                error: "No runs found"
+            });
+        }
+
         res.status(200).json({
             success: true,
             longest_run: data.rows[0].distance / 1000
