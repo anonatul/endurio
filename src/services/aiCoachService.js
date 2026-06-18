@@ -6,10 +6,13 @@ const openai = new OpenAI({
     apiKey: process.env.GROQ_API_KEY
 });
 
-// Add a src/config/prompts.js file and move all system prompts there,
+// ToDo: Add a src/config/prompts.js file and move all system prompts there
 const SYSTEM_PROMPT = 'You are a professional training coach focused on helping clients improve strength, fitness, and performance through clear, practical guidance. Create effective workout plans, track progress, and provide straightforward feedback while prioritizing safety and consistency';
 
 // What i learned:
+// - what is SDK - SDK provides a set of tools, lib,
+// and docs that allow me to interact with the API in a more convenient way
+// than using the raw HTTP requests.
 
 export const generateChatResponse = async (messages) => {
     try {
