@@ -3,7 +3,8 @@ import {
     fetchLongestRun,
     fetchRunningConsistency,
     fetchWeeklyMileage,
-    fetchFastest5K
+    fetchFastest5K,
+    fetchFastest10K
 } from "../services/statsService.js";
 
 // Weekly mileage for last N weeks 
@@ -148,7 +149,7 @@ export const getRunningConsistency = async (req, res) => {
     };
 };
 
-// Get the fastest for 5K
+// Get the fastest time for 5K
 export const getFastest5K = async (req, res) => {
     const { userId } = req.session;
 
@@ -179,3 +180,35 @@ export const getFastest5K = async (req, res) => {
         });
     };
 };
+
+// Get the fastest time for 10K
+export const getFastest10K = async (req, res) => {
+    const { userId } = req.session;
+
+    if (!userId) {
+        return res.status(401).json({
+            error: "Unauthorized"
+        });
+    };
+
+    try {
+        const data = await fetchFastest10K(userId);
+
+        if (data.length === 0 || data[0].round === null) {
+            return res.status(404).json({
+                error: "No 10K runs found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            fastest_10k_time_minutes: data[0].round,
+            date: data[0].start_date_local
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            error: "Failed to fetch fastest 10K time"
+        });
+    };
+}

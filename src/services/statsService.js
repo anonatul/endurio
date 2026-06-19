@@ -77,3 +77,18 @@ export const fetchFastest5K = async (userId) => {
         throw new Error("Failed to fetch fastest 5K");
     };
 };
+
+export const fetchFastest10K = async (userId) => {
+    const queryText = ` SELECT distance, ROUND(moving_time/60.0, 2), start_date_local
+                       FROM activities
+                       WHERE user_id = $1 AND sport_type = 'Run' AND distance >= 10000
+                       ORDER BY moving_time ASC LIMIT 1;
+    `;
+    try {
+        const response = await query(queryText, [userId]);
+        return response.rows;
+    } catch (error) {
+        console.log(error);
+        throw new Error("Failed to fetch fastest 10K");
+    };
+}
