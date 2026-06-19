@@ -61,4 +61,19 @@ export const fetchRunningConsistency = async (userId, weeks) => {
         console.log(error);
         throw new Error("Failed to fetch Running Consistency");
     };
-}
+};
+
+export const fetchFastest5K = async (userId) => {
+    const queryText = ` SELECT distance, ROUND(moving_time/60.0, 2), start_date_local
+                       FROM activities
+                       WHERE user_id = $1 AND sport_type = 'Run' AND distance >= 5000
+                       ORDER BY moving_time ASC LIMIT 1;
+    `;
+    try {
+        const response = await query(queryText, [userId]);
+        return response.rows;
+    } catch (error) {
+        console.log(error);
+        throw new Error("Failed to fetch fastest 5K");
+    };
+};

@@ -1,4 +1,10 @@
-import { fetchAcitivitySummary, fetchLongestRun, fetchRunningConsistency, fetchWeeklyMileage } from "../services/statsService.js";
+import {
+    fetchAcitivitySummary,
+    fetchLongestRun,
+    fetchRunningConsistency,
+    fetchWeeklyMileage,
+    fetchFastest5K
+} from "../services/statsService.js";
 
 // Weekly mileage for last N weeks 
 export const getWeeklyMileage = async (req, res) => {
@@ -92,8 +98,8 @@ export const getLongestRun = async (req, res) => {
 
     try {
         const data = await fetchLongestRun(userId, weeks);
-        
-        if(data.length === 0 || data[0].distance === null) {
+
+        if (data.length === 0 || data[0].distance === null) {
             return res.status(404).json({
                 error: "No runs found"
             });
@@ -114,7 +120,7 @@ export const getLongestRun = async (req, res) => {
 // Get the avergae run per week for last N weeks
 export const getRunningConsistency = async (req, res) => {
     const { userId } = req.session;
-    
+
     if (!userId) {
         return res.status(401).json({
             error: "Unauthorized"
@@ -138,6 +144,38 @@ export const getRunningConsistency = async (req, res) => {
         console.log(error);
         res.status(500).json({
             error: "Failed to fetch average run per weeks"
+        });
+    };
+};
+
+// Get the fastest for 5K
+export const getFastest5K = async (req, res) => {
+    const { userId } = req.session;
+
+    if (!userId) {
+        return res.status(401).json({
+            error: "Unauthorized"
+        });
+    };
+
+    try {
+        const data = await fetchFastest5K(userId);
+
+        if (data.length === 0 || data[0].round === null) {
+            return res.status(404).json({
+                error: "No 5K runs found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            fastest_5k_time_minutes: data[0].round,
+            date: data[0].start_date_local
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            error: "Failed to fetch fastest 5K time"
         });
     };
 };
