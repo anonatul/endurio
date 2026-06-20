@@ -1,5 +1,6 @@
 import { query } from "../db/pool.js";
-import { generateChatResponse } from "../services/aiCoachService.js";
+import { generateChatResponse, generateTrainingPlan } from "../services/aiCoachService.js";
+import { getUserProfile } from "../utils/userStats.js";
 
 // Notes: 
 // Architecture Pattern: 
@@ -40,7 +41,6 @@ export const getChatResponse = async (req, res) => {
     ($1, $4, $5);
     `;
     
-    
     try {
         // Fetch chat history from DB
         const data = await query(fetchChatHistoryQuery, [userId]);
@@ -66,4 +66,26 @@ export const getChatResponse = async (req, res) => {
             error: "Failed to get chat response"
         });
     };
-}
+};
+
+export const getTrainingPlan = async (req, res) => {
+    const { userId } = req.session;
+
+    // todo: We will get the user preference from request body 
+    
+    try {
+        const userProfile = await getUserProfile(userId);
+
+        const trainingPlan = await generateTrainingPlan(userProfile);
+
+        res.status(200).json({
+            trainingPlan
+        });
+
+    } catch (error) {
+        console.error('Controller Error:', error);
+        res.status(500).json({
+            error: "Failed to get training plan."
+        });
+    };
+};
