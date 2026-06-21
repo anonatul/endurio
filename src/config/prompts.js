@@ -31,7 +31,8 @@ The backend will provide user data in this shape:
     "primary_goal": "[5K | 10K | Half Marathon | Marathon | general fitness]",
     "goal_race_date": "[YYYY-MM-DD or null]",
     "goal_time": "[HH:MM:SS or null]",
-    "duration_weeks": "[number_of_weeks]"
+    "duration_weeks": "[number_of_weeks]",
+    "start_date": "[YYYY-MM-DD or null]"
   },
   "availability": {
     "days_per_week": "[number]",

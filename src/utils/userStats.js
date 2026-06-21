@@ -16,7 +16,8 @@ export const getUserProfile = async (userId) => {
                 "primary_goal": "Half Marathon",
                 "goal_race_date": "2026-10-18",
                 "goal_time": "01:40:00",
-                "duration_weeks": 12
+                "duration_weeks": 12,
+                "start_date": "2026-06-22"
             },
 
             "availability": {
