@@ -1,11 +1,9 @@
 import 'dotenv/config'
-import OpenAI from "openai";
+// import OpenAI from "openai";
+import { GoogleGenAI } from '@google/genai';
 import { CHAT_SYSTEM_PROMPT, PLAN_GENERATION_PROMPT, PLAN_GENERATION_PROMPT_LIGHT } from '../config/prompts.js';
 
-const openai = new OpenAI({
-    baseURL: 'https://api.groq.com/openai/v1',
-    apiKey: process.env.GROQ_API_KEY
-});
+const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // What i learned:
 // - what is SDK - SDK provides a set of tools, lib,
@@ -14,18 +12,16 @@ const openai = new OpenAI({
 
 export const generateChatResponse = async (messages) => {
     try {
-        const chatCompletion = await openai.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-                { role: 'system', content: CHAT_SYSTEM_PROMPT },
-                ...messages
-            ],
-            
-            temperature: 0.7,
-            max_completion_tokens: 1000
+        const chatCompletion = await aiClient.models.generateContent({
+            model: "gemini-3.5-flash",
+            systemInstruction: CHAT_SYSTEM_PROMPT,
+            contents: messages.map(m => ({
+                role: m.role === "assistant" ? "model" : "user",
+                parts: [{ text: m.content }]
+            }))
         });
-        
-        return chatCompletion.choices[0].message.content;
+
+        return chatCompletion.text;
     } catch (error) {
         console.error('AI Service Error:', error);
         throw new Error('Failed to generate AI response');
@@ -34,19 +30,21 @@ export const generateChatResponse = async (messages) => {
 
 export const generateTrainingPlan = async (userProfile) => {
     try {
-        const chatCompletion = await openai.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-                { role: 'system', content: PLAN_GENERATION_PROMPT_LIGHT },
-                { role: 'user', content: `Here is my running data: \n ${JSON.stringify(userProfile, null, 2)}`}
-            ],
-
-            temperature: 0.5,
-            max_completion_tokens: 8000,
-            response_format: { type: "json_object" }
+        const chatCompletion = await aiClient.models.generateContent({
+            model: "gemini-2.5-flash",
+            systemInstruction: PLAN_GENERATION_PROMPT,
+            contents: [{
+                role: "user",
+                parts: [{ text: `Generate exactly ${userProfile?.goals?.duration_weeks || 12} weeks of training. My running data:\n${JSON.stringify(userProfile, null, 2)}` }]
+            }],
+            config: {
+                responseMimeType: "application/json"
+            }
         });
 
-        return JSON.parse(chatCompletion.choices[0].message.content);
+        const trainingPlan = JSON.parse(chatCompletion.text);
+
+        return trainingPlan;
     } catch (error) {
         console.error('AI Service Error:', error);
         throw new Error('Failed to generate Training Plan');

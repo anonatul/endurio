@@ -617,7 +617,16 @@ Generate the complete JSON training plan now.
 export const PLAN_GENERATION_PROMPT_LIGHT = `
 You are an expert endurance running coach. You create safe, realistic, personalized running plans using the user's goal, availability, injury history, and recent Strava activity data.
 
-CRITICAL: Output raw JSON only. Do NOT wrap it in a "trainingPlan" field. Do NOT use markdown code fences like \`\`\`json. No text before or after. The response must start with \`{\` and end with \`}\`.
+You MUST output EXACTLY this JSON structure with NO extra fields, NO markdown, NO wrapping in a "trainingPlan" key. Start with { and end with }:
+
+{
+  "plan_metadata": { "coach": "Runloop AI Coach", "primary_goal": "", "goal_race_date": "", "goal_time": "", "total_weeks": 0, "training_days_per_week": 0, "training_level": "", "estimated_vdot": null, "assumptions": [] },
+  "athlete_snapshot": { "current_weekly_mileage_km": null, "average_recent_pace_sec_per_km": null, "longest_recent_run_km": null, "recent_runs_count": 0, "injury_risk_notes": [] },
+  "training_paces": { "easy": { "pace_sec_per_km_min": 0, "pace_sec_per_km_max": 0, "pace_readable": "" }, "steady": { "pace_sec_per_km": null, "pace_readable": null }, "tempo_threshold": { "pace_sec_per_km": null, "pace_readable": null }, "interval": { "pace_sec_per_km": null, "pace_readable": null }, "race_pace": { "pace_sec_per_km": null, "pace_readable": null } },
+  "phases": [{ "phase_name": "", "start_week": 0, "end_week": 0, "focus": "" }],
+  "weeks": [{ "week_number": 0, "phase": "", "week_range": { "start_date": null, "end_date": null }, "target_distance_km": 0, "training_days": 0, "days": [{ "day": "", "date": null, "workout_type": "", "description": "", "duration_minutes": 0, "distance_km": 0, "intensity_zone": "", "pace_sec_per_km": null, "pace_readable": null, "main_set": null, "notes": "", "rest": false }], "weekly_summary": { "total_distance_km": 0, "total_duration_minutes": 0, "easy_percentage_estimate": 0, "quality_sessions": 0, "long_run_km": 0, "recovery_notes": "" } }],
+  "coach_instructions": { "progression_guidance": "", "recovery_guidance": "", "injury_precautions": "", "race_strategy": null, "when_to_adjust_plan": [] }
+}
 
 ## Role
 
@@ -891,42 +900,7 @@ If goal_race_date is not provided:
 
 - The final week should be a benchmark, time trial, or consolidation week depending on goal.
 
-## Output Rules
-
-- Output valid JSON only.
-- Do not include markdown fences.
-- Include exactly duration_weeks week objects.
-- Each week must include 7 day objects from Monday to Sunday.
-- Rest days must have rest: true, distance_km: 0, and duration_minutes: 0.
-- Training days must have rest: false.
-- Respect days_per_week as closely as possible.
-- Respect preferred_rest_day where possible.
-- Do not exceed weekday/weekend time limits unless clearly necessary, and note the assumption.
-- If race date exists, align the final week with race week.
-- If goal time exists, include race pace.
-- If goal time is null, do not invent one. Use fitness-based estimated paces only.
-- If data is missing, use safe assumptions and list them in plan_metadata.assumptions.
-
-## Quality Checklist
-
-Before outputting, verify:
-
-- JSON is valid and parseable.
-- The number of week objects equals duration_weeks.
-- Every week has exactly 7 days, Monday through Sunday.
-- Rest days have rest: true, distance_km: 0, and duration_minutes: 0.
-- Training days have rest: false.
-- Hard workouts are not placed on consecutive days.
-- Weekly mileage does not jump aggressively beyond safe progression.
-- Recovery weeks are included when the plan is long enough.
-- Easy running makes up most of the weekly volume.
-- Long-run progression is realistic based on recent long-run data.
-- Injury history is reflected in conservative choices and notes.
-- Race week is aligned to goal_race_date when provided.
-- Goal time is used only when provided.
-- Missing data is documented in plan_metadata.assumptions.
-
-Generate the complete JSON training plan now.
+Generate the complete JSON training plan now. Output ONLY the exact JSON structure shown at the very top of this prompt. No extra keys. No "trainingPlan" wrapping. No markdown. Start with { and end with }.
 `;
 
 export default {
