@@ -1,5 +1,5 @@
 import 'dotenv/config'
-// import OpenAI from "openai";
+import { trainingPlanSchema } from '../schemas/trainingPlan.schema.js';
 import { GoogleGenAI } from '@google/genai';
 import { CHAT_SYSTEM_PROMPT, PLAN_GENERATION_PROMPT, PLAN_GENERATION_PROMPT_LIGHT } from '../config/prompts.js';
 
@@ -35,10 +35,18 @@ export const generateTrainingPlan = async (userProfile) => {
             systemInstruction: PLAN_GENERATION_PROMPT,
             contents: [{
                 role: "user",
-                parts: [{ text: `Generate exactly ${userProfile?.goals?.duration_weeks || 12} weeks of training. My running data:\n${JSON.stringify(userProfile, null, 2)}` }]
+                parts: [{
+                    text: `Generate exactly ${userProfile?.goals?.duration_weeks || 12 } weeks of training.
+                           Here is the athlete profile:
+                           ${JSON.stringify(userProfile, null, 2)}
+                           Return only valid JSON.` 
+                        }]
             }],
             config: {
-                responseMimeType: "application/json"
+                responseMimeType: "application/json",
+                responseSchema: trainingPlanSchema,
+                temperature: 0,
+                topP: 0.1
             }
         });
 
