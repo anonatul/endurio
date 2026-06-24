@@ -13,7 +13,7 @@ const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 export const generateChatResponse = async (messages) => {
     try {
         const chatCompletion = await aiClient.models.generateContent({
-            model: "gemini-3.5-flash",
+            model: "gemini-3-flash-preview",
             systemInstruction: CHAT_SYSTEM_PROMPT,
             contents: messages.map(m => ({
                 role: m.role === "assistant" ? "model" : "user",
@@ -31,7 +31,7 @@ export const generateChatResponse = async (messages) => {
 export const generateTrainingPlan = async (userProfile) => {
     try {
         const chatCompletion = await aiClient.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             systemInstruction: PLAN_GENERATION_PROMPT,
             contents: [{
                 role: "user",

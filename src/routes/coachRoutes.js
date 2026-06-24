@@ -4,6 +4,6 @@ import { getChatResponse, getTrainingPlan } from '../controllers/aiCoachControll
 const router = express.Router();
 
 router.post("/ask", getChatResponse);
-router.get("/generate-plan", getTrainingPlan);
+router.post("/generate-plan", getTrainingPlan);
 
 export default router;

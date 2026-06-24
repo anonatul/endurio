@@ -71,12 +71,33 @@ export const getChatResponse = async (req, res) => {
 export const getTrainingPlan = async (req, res) => {
     const { userId } = req.session;
 
-    // todo: We will get the user preference from request body 
+    // todo:  get the user preference from request body 
+
+     if (!userId) {
+        return res.status(401).json({
+            error: "Unauthorized"
+        });
+    };
     
     try {
         const userProfile = await getUserProfile(userId);
-
         const trainingPlan = await generateTrainingPlan(userProfile);
+
+        const goal = userProfile.goals.primary_goal;
+        const raceDate = userProfile.goals.goal_race_date;
+        const durationWeeks = userProfile.goals.duration_weeks;
+        const currentWeek = 1;
+        const rawPlan = trainingPlan;
+        const planStatus = 'Not Started';
+        
+        const insertTrainingPlanQuery = `
+                                    INSERT INTO plans (user_id, goal, race_date, duration_weeks, current_week, raw_plan, status)
+                                    VALUES ($1, $2, $3, $4, $5, $6, $7);
+        `;
+
+        console.log('Writing Plan to DB...');
+        await query(insertTrainingPlanQuery, [userId, goal, raceDate, durationWeeks, currentWeek, rawPlan, planStatus])
+        console.log('Plan Inserted!!');
 
         res.status(200).json({
             trainingPlan
