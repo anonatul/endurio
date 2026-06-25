@@ -20,32 +20,32 @@ export const getChatResponse = async (req, res) => {
         });
     };
 
-    if(!message) {
+    if (!message) {
         return res.status(400).json({
             error: "Message is required!"
         });
     };
 
     const userInput = { role: 'user', content: message };
-    
+
     const fetchChatHistoryQuery = `
     SELECT role, content
     FROM chat_history 
     WHERE user_id = $1;
     `;
-    
+
     const insertChatHistoryQuery = `
     INSERT INTO chat_history (user_id, role, content)
     VALUES 
     ($1, $2, $3),
     ($1, $4, $5);
     `;
-    
+
     try {
         // Fetch chat history from DB
         const data = await query(fetchChatHistoryQuery, [userId]);
         const historyChats = await data.rows;
-        
+
         // store history chats + new user input
         const messages = [...historyChats, userInput];
 
@@ -73,12 +73,12 @@ export const getTrainingPlan = async (req, res) => {
 
     // todo:  get the user preference from request body 
 
-     if (!userId) {
+    if (!userId) {
         return res.status(401).json({
             error: "Unauthorized"
         });
     };
-    
+
     try {
         const userProfile = await getUserProfile(userId);
         const trainingPlan = await generateTrainingPlan(userProfile);
@@ -88,20 +88,31 @@ export const getTrainingPlan = async (req, res) => {
         const durationWeeks = userProfile.goals.duration_weeks;
         const currentWeek = 1;
         const rawPlan = trainingPlan;
-        const planStatus = 'Not Started';
-        
+        const planStatus = 'active';
+
         const insertTrainingPlanQuery = `
                                     INSERT INTO plans (user_id, goal, race_date, duration_weeks, current_week, raw_plan, status)
-                                    VALUES ($1, $2, $3, $4, $5, $6, $7);
+                                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                                    RETURNING id;
         `;
 
         console.log('Writing Plan to DB...');
-        await query(insertTrainingPlanQuery, [userId, goal, raceDate, durationWeeks, currentWeek, rawPlan, planStatus])
-        console.log('Plan Inserted!!');
-
-        res.status(200).json({
-            trainingPlan
-        });
+        try {
+            const planResult = await query(insertTrainingPlanQuery, [userId, goal, raceDate, durationWeeks, currentWeek, rawPlan, planStatus]);
+            const planId = planResult.rows?.[0]?.id;
+            
+            console.log('Plan Inserted!!');
+            
+            res.status(200).json({
+                id: planId,
+                trainingPlan
+            });
+        } catch (dbError) {
+            console.error('DB Insert failed, returning plan anyway:', dbError.message);
+            res.status(200).json({
+                trainingPlan
+            });
+        };
 
     } catch (error) {
         console.error('Controller Error:', error);
