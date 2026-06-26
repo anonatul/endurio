@@ -17,7 +17,13 @@ export const fetchWeeklyMileage = async (userId, weeks) => {
 };
 
 export const fetchAcitivitySummary = async (userId, days) => {
-    const queryText = `SELECT COUNT(*) AS total_runs, SUM(distance)/1000 AS total_distance, ROUND(SUM(moving_time)/3600.0, 1) AS total_hours, SUM(moving_time) / 60.0 / (SUM(distance) / 1000) AS avg_pace_per_km, AVG(average_heartrate) AS avg_hr 
+    // what is learned here:
+    // when calculating avg pace, for that we divide with SUM(distance),
+    // now if SUM(distance) is 0, then we will get divide by zero error, 
+    // so we use NULLIF(SUM(distance), 0) to avoid that error - 
+    // it will return NULL if SUM(distance) is 0, and then the whole expression will return NULL instead of throwing an error.
+     
+    const queryText = `SELECT COUNT(*) AS total_runs, SUM(distance)/1000 AS total_distance, ROUND(SUM(moving_time)/3600.0, 1) AS total_hours, SUM(moving_time) / 60.0 / (NULLIF(SUM(distance), 0) / 1000) AS avg_pace_per_km, AVG(average_heartrate) AS avg_hr 
                        FROM activities 
                        WHERE user_id = $1 AND sport_type = 'Run' AND start_date_local >= NOW() - ( $2 * INTERVAL '1 day' );
     `;
