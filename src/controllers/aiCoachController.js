@@ -109,8 +109,8 @@ export const getTrainingPlan = async (req, res) => {
             });
         } catch (dbError) {
             console.error('DB Insert failed, returning plan anyway:', dbError.message);
-            res.status(200).json({
-                trainingPlan
+            res.status(500).json({
+                error: "Failed to save training plan to database."
             });
         };
 

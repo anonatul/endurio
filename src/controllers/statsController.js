@@ -18,6 +18,12 @@ export const getWeeklyMileage = async (req, res) => {
         });
     };
 
+    if (weeks <= 0 || !Number.isInteger(Number(weeks))) {
+        return res.status(400).json({
+            error: "Invalid weeks parameter. It must be a positive integer."
+        });
+    }
+
     try {
         // what i learned new here:
         // - DATE_TRUNC('week', start_date_local) AS week_start: this will truncate the date to the start of the week, so we can group by week
@@ -47,6 +53,12 @@ export const getActivitySummary = async (req, res) => {
     if (!userId) {
         return res.status(401).json({
             error: "Unauthorized"
+        });
+    };
+
+    if(days <= 0 || !Number.isInteger(Number(days))) {
+        return res.status(400).json({
+            error: "Invalid days parameter. It must be a positive integer."
         });
     };
 
@@ -97,6 +109,12 @@ export const getLongestRun = async (req, res) => {
 
     const weeks = req.query.weeks || 4;
 
+    if (weeks <= 0 || !Number.isInteger(Number(weeks))) {
+        return res.status(400).json({
+            error: "Invalid weeks parameter. It must be a positive integer."
+        });
+    };
+
     try {
         const data = await fetchLongestRun(userId, weeks);
 
@@ -129,6 +147,12 @@ export const getRunningConsistency = async (req, res) => {
     };
 
     const weeks = req.query.weeks || 4;
+
+    if (weeks <= 0 || !Number.isInteger(Number(weeks))) {
+        return res.status(400).json({
+            error: "Invalid weeks parameter. It must be a positive integer."
+        });
+    };
 
     try {
         const data = await fetchRunningConsistency(userId, weeks);
