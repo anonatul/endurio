@@ -66,11 +66,13 @@ const daySchema = {
     },
 
     pace_sec_per_km: {
-      type: "NUMBER"
+      type: "NUMBER",
+      nullable: true
     },
 
     pace_readable: {
-      type: "STRING"
+      type: "STRING",
+      nullable: true
     },
 
     main_set: mainSetSchema,

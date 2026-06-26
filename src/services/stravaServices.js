@@ -30,16 +30,16 @@ export const exchangeCodeForToken = async (authCode) => {
         );
         const userId = userResult.rows[0].id;
 
-        client.query('BEGIN');
+        await client.query('BEGIN');
 
         await query('DELETE FROM strava_tokens WHERE user_id = $1', [userId]);
         await query('INSERT INTO strava_tokens (user_id, access_token, refresh_token, expires_at) VALUES ($1, $2, $3, to_timestamp($4))', [userId, access_token, refresh_token, expires_at]);
 
-        client.query('COMMIT');
+        await client.query('COMMIT');
 
         return userId;
     } catch (error) {
-        client.query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error('Error exchanging code for token:', error);
         throw new Error('Failed to exchange code for token');
     }
