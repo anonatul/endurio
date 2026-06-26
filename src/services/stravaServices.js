@@ -2,6 +2,9 @@ import { query } from '../db/pool.js';
 import pool from '../db/pool.js';
 
 export const exchangeCodeForToken = async (authCode) => {
+    
+    const client = await pool.connect();
+
     try {
         const data = await fetch('https://www.strava.com/api/v3/oauth/token', {
             method: 'POST',
@@ -27,11 +30,16 @@ export const exchangeCodeForToken = async (authCode) => {
         );
         const userId = userResult.rows[0].id;
 
+        client.query('BEGIN');
+
         await query('DELETE FROM strava_tokens WHERE user_id = $1', [userId]);
         await query('INSERT INTO strava_tokens (user_id, access_token, refresh_token, expires_at) VALUES ($1, $2, $3, to_timestamp($4))', [userId, access_token, refresh_token, expires_at]);
 
+        client.query('COMMIT');
+
         return userId;
     } catch (error) {
+        client.query('ROLLBACK');
         console.error('Error exchanging code for token:', error);
         throw new Error('Failed to exchange code for token');
     }
@@ -61,12 +69,18 @@ export const syncUserActivities = async (userId, token) => {
         console.log('Starting to sync Strava activities...');
         while (length !== 0) {
 
-            const activities = await fetch(`https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`, {
+            const res = await fetch(`https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${String(token)}`
                 }
-            }).then(res => res.json());
+            });
+
+            if(!res.ok) {
+                throw new Error(`Strava API responded with status ${res.status}`);
+            }
+
+            const activities = await res.json();
 
             length = activities.length;
             page++;
