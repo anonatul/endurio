@@ -97,4 +97,20 @@ export const fetchFastest10K = async (userId) => {
         console.log(error);
         throw new Error("Failed to fetch fastest 10K");
     };
-}
+};
+
+export const fetchRecentRuns = async (userId, limit) => {
+    const queryText = `SELECT start_date_local, distance, moving_time, average_speed, max_speed, elapsed_time, average_heartrate, max_heartrate, total_elevation_gain
+                       FROM activities
+                       WHERE user_id = $1 AND sport_type = 'Run'
+                       ORDER BY start_date_local DESC
+                       LIMIT $2;
+    `;
+    try {
+        const response = await query(queryText, [userId, limit]);
+        return response.rows;
+    } catch (error) {
+        console.log(error);
+        throw new Error("Failed to fetch recent runs");
+    };
+};
