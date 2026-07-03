@@ -5,6 +5,7 @@ import session from 'express-session';
 import genStore from 'connect-pg-simple';
 import authRoutes from './src/routes/authRoutes.js';
 import activityRoutes from './src/routes/activityRoutes.js';
+import userRoutes from './src/routes/userRoutes.js';
 import { verifyDatabaseConnection } from './src/db/pool.js';
 import initCronJobs from './src/services/cronServices.js';
 import statRoutes from './src/routes/statRoutes.js';
@@ -62,6 +63,9 @@ app.use("/api/stats", statRoutes);
 
 // ----- Coach AI Routes -----
 app.use("/api/coach", coachRoutes);
+
+// ----- User Routes -----
+app.use("/api/user", userRoutes);
 
 const server = app.listen(3000, () => {
     console.log("Server is listening to 3000");
