@@ -32,8 +32,8 @@ export const exchangeCodeForToken = async (authCode) => {
 
         await client.query('BEGIN');
 
-        await query('DELETE FROM strava_tokens WHERE user_id = $1', [userId]);
-        await query('INSERT INTO strava_tokens (user_id, access_token, refresh_token, expires_at) VALUES ($1, $2, $3, to_timestamp($4))', [userId, access_token, refresh_token, expires_at]);
+        await client.query('DELETE FROM strava_tokens WHERE user_id = $1', [userId]);
+        await client.query('INSERT INTO strava_tokens (user_id, access_token, refresh_token, expires_at) VALUES ($1, $2, $3, to_timestamp($4))', [userId, access_token, refresh_token, expires_at]);
 
         await client.query('COMMIT');
 
