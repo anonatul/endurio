@@ -10,7 +10,29 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+build
+coverage
+.parcel-cache
+.turbo
+.next
+.nuxt
+.svelte-kit
+.storybook-out
 *.local
+*.env
+.env
+.env.*
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Cache / temp
+.cache
+.eslintcache
+tmp
+temp
 
 # Editor directories and files
 .vscode/*
