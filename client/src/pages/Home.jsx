@@ -1,11 +1,11 @@
-import Navbar from "../components/Navbar";
+import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
 import HowItWorks from "../components/HowItWorks.jsx";
 import Features from "../components/Features.jsx";
 import FAQ from "../components/FAQ.jsx";
 import Footer from "../components/Footer.jsx";
 
-const LandingPage = () => {
+const Home = () => {
   return (
     <>
       <Navbar />
@@ -20,4 +20,4 @@ const LandingPage = () => {
   );
 };
 
-export default LandingPage;
+export default Home;
