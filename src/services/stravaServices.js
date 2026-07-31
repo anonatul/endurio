@@ -30,18 +30,25 @@ export const exchangeCodeForToken = async (authCode) => {
         );
         const userId = userResult.rows[0].id;
 
-        await client.query('BEGIN');
-
-        await client.query('DELETE FROM strava_tokens WHERE user_id = $1', [userId]);
-        await client.query('INSERT INTO strava_tokens (user_id, access_token, refresh_token, expires_at) VALUES ($1, $2, $3, to_timestamp($4))', [userId, access_token, refresh_token, expires_at]);
-
-        await client.query('COMMIT');
+        try {
+            await client.query('BEGIN');
+            
+            await client.query('DELETE FROM strava_tokens WHERE user_id = $1', [userId]);
+            await client.query('INSERT INTO strava_tokens (user_id, access_token, refresh_token, expires_at) VALUES ($1, $2, $3, to_timestamp($4))', [userId, access_token, refresh_token, expires_at]);
+            
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('Error storing tokens in the database:', error);
+            throw new Error('Failed to store tokens in the database');
+        }
 
         return userId;
     } catch (error) {
-        await client.query('ROLLBACK');
         console.error('Error exchanging code for token:', error);
         throw new Error('Failed to exchange code for token');
+    } finally {
+        client.release();
     }
 };
 
