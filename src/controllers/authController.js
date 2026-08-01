@@ -21,9 +21,7 @@ export const stravaAuthCallback = async (req, res) => {
 
         req.session.userId = userId;
 
-        res.json({
-            message: 'Successfully authorized!',
-        });
+        res.redirect(`${process.env.CLIENT_URL}/onboard`);
 
     } catch(error) { 
         console.error('Error in Strava auth callback:', error);
