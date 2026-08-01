@@ -1,5 +1,6 @@
 import HeroBackground from "./ui/hero-background";
 import StravaLogo from "./ui/strava-logo";
+import { useAuth } from "../context/AuthContext";
 import {
   ArrowRight,
   CalendarDays,
@@ -158,7 +159,18 @@ const ProductPreview = () => (
   </div>
 );
 
+
 const Hero = () => {
+  const { user, isAuthenticated } = useAuth();
+  
+  const handleLogin = () => {
+    if(isAuthenticated) {
+      window.location.href = '/dashboard';
+    } else {
+      window.location.href = `${import.meta.env.VITE_API_URL}/auth/strava`;
+    }
+  };
+  
   return (
     <section
       className="relative overflow-hidden border-b border-[#181818] pt-32 sm:pt-32 lg:pt-36"
@@ -184,10 +196,10 @@ const Hero = () => {
           </p>
 
           <div className="mt-6 flex flex-col items-center gap-3 sm:mt-7 sm:flex-row">
-            <a href="/start" className="group flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 sm:px-6 sm:py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-              Connect Strava
+            <button onClick={handleLogin} className="cursor-pointer group flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 sm:px-6 sm:py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+              {isAuthenticated ? "Go to Dashboard" : "Connect Strava"}
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 sm:h-4 sm:w-4" />
-            </a>
+            </button>
             <a href="#coach" className="rounded-full border border-white/[0.12] px-5 py-2.5 text-sm font-medium text-white/62 transition hover:border-white/25 hover:text-white sm:px-6 sm:py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
               See the workflow
             </a>
