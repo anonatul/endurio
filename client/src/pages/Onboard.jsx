@@ -35,17 +35,10 @@ function Onboard() {
         body: JSON.stringify(form)
       });
 
-      
-
       if (response.ok) {
-        // const data = await response.json();
         window.location.href = "/dashboard"; // todo - dashbaord is pending
       }
 
-      if (response.status === 401) {
-        localStorage.setItem("pendingOnboard", JSON.stringify(form));
-        window.location.href = `${import.meta.env.VITE_API_URL}/auth/strava`;
-      }
     } catch (error) {
       console.error('Error submitting onboard form:', error);
       alert('Failed to submit form. Please try again.');

@@ -161,7 +161,7 @@ const ProductPreview = () => (
 
 
 const Hero = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   
   const handleLogin = () => {
     if(isAuthenticated) {
