@@ -11,4 +11,21 @@ router.get("/strava", async (req, res) => {
 
 router.get("/strava/callback", stravaAuthCallback);
 
+router.post("/logout", (req, res) => {
+    req.session.destroy((err) => {
+        if(err) {
+            return res.status(500).json({
+                error: "Failed to logout"
+            });
+        }
+
+        res.clearCookie('connect.sid');
+        
+        res.status(200).json({
+            status: "success",
+            message: "Logged out successfully"
+        });
+    });
+});
+
 export default router;
