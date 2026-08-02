@@ -16,7 +16,7 @@ export const fetchWeeklyMileage = async (userId, weeks) => {
     };
 };
 
-export const fetchAcitivitySummary = async (userId, days) => {
+export const fetchActivitySummary = async (userId, days) => {
     // what is learned here:
     // when calculating avg pace, for that we divide with SUM(distance),
     // now if SUM(distance) is 0, then we will get divide by zero error, 
