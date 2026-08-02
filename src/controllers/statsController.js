@@ -1,5 +1,5 @@
 import {
-    fetchAcitivitySummary,
+    fetchActivitySummary,
     fetchLongestRun,
     fetchRunningConsistency,
     fetchWeeklyMileage,
