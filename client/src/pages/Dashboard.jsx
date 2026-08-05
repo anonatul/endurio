@@ -3,11 +3,37 @@ import { Activity, Clock, Gauge, Flame, TrendingUp, Trophy, Timer, Zap } from "l
 
 import Sidebar from "../components/ui/Sidebar";
 
+const formatPace = (timeStr) => {
+    if(!timeStr) return "-";
+    const decimalMinutes = parseFloat(timeStr);
+    const totalSeconds = Math.floor(decimalMinutes * 60);
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+
+    return hours >= 1 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
+};
+
+const formatDate = (isoString) => {
+
+    if(!isoString) return "-";
+    const date = new Date(isoString);
+
+    const formattedDate = date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+    });
+
+    return formattedDate;
+};
+
 export default function Dashboard() {
     const [selected, setSelected] = useState("Dashboard");
 
     const [data, setData] = useState(null);
-    
+
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
@@ -15,7 +41,7 @@ export default function Dashboard() {
                     credentials: "include"
                 });
 
-                if(!response.ok) throw new Error("Network Error");
+                if (!response.ok) throw new Error("Network Error");
 
                 const result = await response.json();
                 setData(result);
@@ -49,10 +75,10 @@ export default function Dashboard() {
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatCard icon={Flame} label="Longest Run" value="16.2 km" hint="last 4 weeks" />
-                    <StatCard icon={Timer} label="Fastest 5K" value="24:30" hint="12 Jun" />
-                    <StatCard icon={Zap} label="Fastest 10K" value="51:12" hint="20 May" />
-                    <StatCard icon={Trophy} label="Runs / Week" value="2" hint="last 4 weeks" />
+                    <StatCard icon={Flame} label="Longest Run" value={data?.longestRun[0]?.distance ?? "-"} hint="last 4 weeks" />
+                    <StatCard icon={Timer} label="Fastest 5K" value={formatPace(data?.fastest5K[0]?.round)} hint={formatDate(data?.fastest5K[0]?.start_date_local)} />
+                    <StatCard icon={Zap} label="Fastest 10K" value={formatPace(data?.fastest10K[0]?.round)} hint={formatDate(data?.fastest10K[0]?.start_date_local)} />
+                    <StatCard icon={Trophy} label="Runs / Week" value={data?.runningConsistency[0]?.count} hint="last 4 weeks" />
                 </div>
 
                 <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
