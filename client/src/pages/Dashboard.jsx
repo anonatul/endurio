@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Activity, Clock, Gauge, Flame, TrendingUp, Trophy, Timer, Zap } from "lucide-react";
 
+// components
 import Sidebar from "../components/ui/Sidebar";
 
 const formatPace = (timeStr) => {
-    if(!timeStr) return "-";
+    if (!timeStr) return "-";
     const decimalMinutes = parseFloat(timeStr);
     const totalSeconds = Math.floor(decimalMinutes * 60);
 
@@ -17,7 +18,7 @@ const formatPace = (timeStr) => {
 
 const formatDate = (isoString) => {
 
-    if(!isoString) return "-";
+    if (!isoString) return "-";
     const date = new Date(isoString);
 
     const formattedDate = date.toLocaleDateString("en-GB", {
@@ -30,12 +31,14 @@ const formatDate = (isoString) => {
 };
 
 export default function Dashboard() {
-    const [selected, setSelected] = useState("Dashboard");
 
+    const [selected, setSelected] = useState("Dashboard");
+    const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
+            setLoading(true);
             try {
                 const response = await fetch(`${import.meta.env.VITE_API_URL}/stats/dashboard`, {
                     credentials: "include"
@@ -45,11 +48,10 @@ export default function Dashboard() {
 
                 const result = await response.json();
                 setData(result);
-
-                console.log(result);
-
             } catch (error) {
                 console.error(error);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -68,17 +70,63 @@ export default function Dashboard() {
                 </header>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatCard icon={Activity} label="Runs" value={data?.activitySummary[0]?.total_runs ?? "-"} hint="last 30 days" />
-                    <StatCard icon={TrendingUp} label="Distance" value={data?.activitySummary[0]?.total_distance ?? "-"} hint="last 30 days" />
-                    <StatCard icon={Clock} label="Time" value={data?.activitySummary[0]?.total_hours ?? "-"} hint="last 30 days" />
-                    <StatCard icon={Gauge} label="Avg Pace" value={data?.activitySummary[0]?.avg_pace_per_km ?? "-"} hint="last 30 days" />
+
+                    {loading ? (
+                        <CardSkeleton />
+                    ) : (
+                        <StatCard icon={Activity} label="Runs" value={data?.activitySummary[0]?.total_runs ?? "-"} hint="last 30 days" />
+                    )}
+
+                    {loading ? (
+                        <CardSkeleton />
+                    ) : (
+                        <StatCard icon={TrendingUp} label="Distance" value={data?.activitySummary[0]?.total_distance ?? "-"} hint="last 30 days" />
+                    )}
+
+                    {loading ? (
+                        <CardSkeleton />
+                    ) : (
+                        <StatCard icon={Clock} label="Time" value={data?.activitySummary[0]?.total_hours ?? "-"} hint="last 30 days" />
+                    )}
+
+
+                    {loading ? (
+                        <CardSkeleton />
+                    ) : (
+                        <StatCard icon={Gauge} label="Avg Pace" value={data?.activitySummary[0]?.avg_pace_per_km ?? "-"} hint="last 30 days" />
+                    )}
+
+
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatCard icon={Flame} label="Longest Run" value={data?.longestRun[0]?.distance ?? "-"} hint="last 4 weeks" />
-                    <StatCard icon={Timer} label="Fastest 5K" value={formatPace(data?.fastest5K[0]?.round)} hint={formatDate(data?.fastest5K[0]?.start_date_local)} />
-                    <StatCard icon={Zap} label="Fastest 10K" value={formatPace(data?.fastest10K[0]?.round)} hint={formatDate(data?.fastest10K[0]?.start_date_local)} />
-                    <StatCard icon={Trophy} label="Runs / Week" value={data?.runningConsistency[0]?.count} hint="last 4 weeks" />
+
+
+                    {loading ? (
+                        <CardSkeleton />
+                    ) : (
+                        <StatCard icon={Flame} label="Longest Run" value={data?.longestRun[0]?.distance ?? "-"} hint="last 4 weeks" />
+                    )}
+
+                    {loading ? (
+                        <CardSkeleton />
+                    ) : (
+                        <StatCard icon={Timer} label="Fastest 5K" value={formatPace(data?.fastest5K[0]?.round)} hint={formatDate(data?.fastest5K[0]?.start_date_local)} />
+                    )}
+
+                    {loading ? (
+                        <CardSkeleton />
+                    ) : (
+                        <StatCard icon={Zap} label="Fastest 10K" value={formatPace(data?.fastest10K[0]?.round)} hint={formatDate(data?.fastest10K[0]?.start_date_local)} />
+                    )}
+
+
+                    {loading ? (
+                        <CardSkeleton />
+                    ) : (
+                        <StatCard icon={Trophy} label="Runs / Week" value={data?.runningConsistency[0]?.count} hint="last 4 weeks" />
+                    )}
+
                 </div>
 
                 <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -129,5 +177,16 @@ const StatCard = ({ icon: Icon, label, value, hint }) => (
         <p className="text-sm text-white/40">{label}</p>
         <p className="mt-1 text-2xl font-bold tracking-tight">{value}</p>
         <p className="mt-1 text-xs text-white/25">{hint}</p>
+    </div>
+);
+
+const CardSkeleton = () => (
+    <div className="border border-white/[0.06] bg-[#0A0A0A] p-6">
+        <div className="mb-4 flex items-center justify-between">
+            <div className="h-4 w-4 animate-pulse rounded-full bg-white/10" />
+        </div>
+        <div className="h-4 w-16 animate-pulse rounded bg-white/10" />
+        <div className="mt-3 h-8 w-24 animate-pulse rounded bg-white/10" />
+        <div className="mt-2 h-3 w-20 animate-pulse rounded bg-white/10" />
     </div>
 );
