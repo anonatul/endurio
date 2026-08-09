@@ -35,19 +35,20 @@ export default function Dashboard() {
     const [selected, setSelected] = useState("Dashboard");
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
+    const [recentRuns, setRecentRuns] = useState([]);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
-            setLoading(true);
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/stats/dashboard`, {
-                    credentials: "include"
-                });
+                const [statsRes, runsRes] = await Promise.all([
+                    fetch(`${import.meta.env.VITE_API_URL}/stats/dashboard`, { credentials: "include" }),
+                    fetch(`${import.meta.env.VITE_API_URL}/activities?limit=5`, { credentials: "include" })
+                ]);
 
-                if (!response.ok) throw new Error("Network Error");
+                const [stats, runs] = await Promise.all([statsRes.json(), runsRes.json()]);
 
-                const result = await response.json();
-                setData(result);
+                setData(stats);
+                setRecentRuns(runs.activities);
             } catch (error) {
                 console.error(error);
             } finally {
@@ -146,21 +147,31 @@ export default function Dashboard() {
                     <section className="border border-white/[0.06] bg-[#0A0A0A] p-6">
                         <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-white/40">Recent Runs</h2>
                         <ul className="space-y-3">
-                            {[
-                                { date: "02 Aug", km: "12.4", min: "82" },
-                                { date: "31 Jul", km: "8.2", min: "52" },
-                                { date: "28 Jul", km: "15.0", min: "96" },
-                                { date: "25 Jul", km: "6.8", min: "42" },
-                                { date: "21 Jul", km: "10.1", min: "64" },
-                            ].map((run, i) => (
-                                <li key={i} className="flex items-center justify-between border-b border-white/[0.04] pb-3 last:border-0">
-                                    <div>
-                                        <p className="text-sm font-medium">{run.date}</p>
-                                        <p className="text-xs text-white/40">{run.km} km</p>
-                                    </div>
-                                    <span className="text-xs text-white/40">{run.min} min</span>
-                                </li>
-                            ))}
+                            {
+                                loading ? (
+                                    <>
+                                        {[...Array(5)].map((_, i) => (
+                                            <li key={i} className="flex items-center justify-between border-b border-white/[0.04] pb-3 last:border-0">
+                                                <div>
+                                                    <div className="h-4 w-16 animate-pulse rounded bg-white/10" />
+                                                    <div className="mt-1 h-3 w-12 animate-pulse rounded bg-white/10" />
+                                                </div>
+                                                <div className="h-3 w-8 animate-pulse rounded bg-white/10" />
+                                            </li>
+                                        ))}
+                                    </>
+                                ) : (
+                                    recentRuns?.map((run, i) => (
+                                        <li key={i} className="flex items-center justify-between border-b border-white/[0.04] pb-3 last:border-0">
+                                            <div>
+                                                <p className="text-sm font-medium">{formatDate(run.start_date_local)}</p>
+                                                <p className="text-xs text-white/40">{(run.distance / 1000).toFixed(2)} km</p>
+                                            </div>
+                                            <span className="text-xs text-white/40">{Math.round(run.moving_time / 60)} min</span>
+                                        </li>
+                                    ))
+                                )
+                            }
                         </ul>
                     </section>
                 </div>
