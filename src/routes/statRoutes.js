@@ -23,7 +23,7 @@ const getDashboardData = async (req, res) => {
     try {
 
         const [weeklyMileage, activitySummary, longestRun, runningConsistency, fastest5K, fastest10K] = await Promise.all([
-            fetchWeeklyMileage(userId, 4),
+            fetchWeeklyMileage(userId, 7),
             fetchActivitySummary(userId, 30),
             fetchLongestRun(userId, 4),
             fetchRunningConsistency(userId, 4),

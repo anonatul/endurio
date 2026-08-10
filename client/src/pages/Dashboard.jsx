@@ -45,10 +45,14 @@ export default function Dashboard() {
                     fetch(`${import.meta.env.VITE_API_URL}/activities?limit=5`, { credentials: "include" })
                 ]);
 
-                const [stats, runs] = await Promise.all([statsRes.json(), runsRes.json()]);
+                const [stats, runs] = await Promise.all([
+                    statsRes.json(),
+                    runsRes.json()
+                ]);
 
                 setData(stats);
                 setRecentRuns(runs.activities);
+
             } catch (error) {
                 console.error(error);
             } finally {
@@ -134,10 +138,10 @@ export default function Dashboard() {
                     <section className="border border-white/[0.06] bg-[#0A0A0A] p-6 lg:col-span-2">
                         <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-white/40">Weekly Mileage</h2>
                         <div className="flex items-end gap-3">
-                            {[14.9, 18.8, 22.4, 14.0, 24.1, 19.5, 12.3].map((km, i) => (
+                            {data?.weeklyMileage.map((week, i) => (
                                 <div key={i} className="flex flex-1 flex-col items-center gap-2">
-                                    <span className="text-xs text-white/40">{km}</span>
-                                    <div className="w-full bg-white/80" style={{ height: `${(km / 24.1) * 120}px` }} />
+                                    <span className="text-xs text-white/40">{week.distance_km.toFixed(2)}</span>
+                                    <div className="w-full bg-white/80" style={{ height: `${(week.distance_km / Math.max(...data.weeklyMileage.map((w) => w.distance_km))) * 120}px` }} />
                                     <span className="text-[10px] text-white/25">W{i + 1}</span>
                                 </div>
                             ))}
