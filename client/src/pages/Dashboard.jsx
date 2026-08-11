@@ -30,6 +30,17 @@ const formatDate = (isoString) => {
     return formattedDate;
 };
 
+const formatWeekDate = (isoString) => {
+    const startDay = new Date(isoString);
+    const endDay = new Date(startDay);
+    endDay.setDate(startDay.getDate() + 6);
+
+   const formatter = new Intl.DateTimeFormat("en-GB", { day: 'numeric', month: 'long', timeZone: 'UTC' });
+   const result = formatter.formatRange(startDay, endDay).toLocaleLowerCase();
+
+    return result;
+};
+
 export default function Dashboard() {
 
     const [selected, setSelected] = useState("Dashboard");
@@ -138,11 +149,11 @@ export default function Dashboard() {
                     <section className="border border-white/[0.06] bg-[#0A0A0A] p-6 lg:col-span-2">
                         <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-white/40">Weekly Mileage</h2>
                         <div className="flex items-end gap-3">
-                            {data?.weeklyMileage.map((week, i) => (
+                            {data?.weeklyMileage?.map((week, i) => (
                                 <div key={i} className="flex flex-1 flex-col items-center gap-2">
                                     <span className="text-xs text-white/40">{week.distance_km.toFixed(2)}</span>
                                     <div className="w-full bg-white/80" style={{ height: `${(week.distance_km / Math.max(...data.weeklyMileage.map((w) => w.distance_km))) * 120}px` }} />
-                                    <span className="text-[10px] text-white/25">W{i + 1}</span>
+                                    <span className="text-[10px] text-white/25">{formatWeekDate(week.week_start)}</span>
                                 </div>
                             ))}
                         </div>
