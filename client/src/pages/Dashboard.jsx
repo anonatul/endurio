@@ -149,7 +149,7 @@ export default function Dashboard() {
                     <section className="border border-white/[0.06] bg-[#0A0A0A] p-6 lg:col-span-2">
                         <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-white/40">Weekly Mileage</h2>
                         <div className="flex items-end gap-3">
-                            {data?.weeklyMileage?.map((week, i) => (
+                            {data?.weeklyMileage?.slice().reverse().map((week, i) => (
                                 <div key={i} className="flex flex-1 flex-col items-center gap-2">
                                     <span className="text-xs text-white/40">{week.distance_km.toFixed(2)}</span>
                                     <div className="w-full bg-white/80" style={{ height: `${(week.distance_km / Math.max(...data.weeklyMileage.map((w) => w.distance_km))) * 120}px` }} />
