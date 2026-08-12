@@ -1,4 +1,5 @@
 import { exchangeCodeForToken } from '../services/stravaServices.js';
+import { query } from '../db/pool.js';
 
 export const stravaAuthCallback = async (req, res) => {
     try{
@@ -21,7 +22,14 @@ export const stravaAuthCallback = async (req, res) => {
 
         req.session.userId = userId;
 
-        res.redirect(`${process.env.CLIENT_URL}/onboard`);
+        const userProfile = await query('SELECT profile FROM users WHERE id = $1', [userId]);
+
+        if(userProfile.rows.length > 0 && userProfile.rows[0].profile) {
+            res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+        } else {
+            res.redirect(`${process.env.CLIENT_URL}/onboard`);
+        }
+
 
     } catch(error) { 
         console.error('Error in Strava auth callback:', error);
