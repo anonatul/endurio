@@ -22,6 +22,26 @@ export default function Sidebar({ selected, setSelected }) {
         }
     };
 
+     const handleSync = async () => {
+        console.log("Syncing data...");
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/activities/sync`, {
+                method: "POST",
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to sync data");
+            }
+
+            const result = await response.json();
+            console.log("Sync result:", result);
+
+        } catch (error) {
+            console.error("Error syncing data:", error);
+        } 
+    };
+
     return (
         <nav className={`relative flex h-screen shrink-0 flex-col border-r border-white/[0.06] bg-[#0A0A0A] transition-all duration-300 ${open ? "w-64" : "w-16"}`}>
             <div className="flex items-center gap-2 px-5 py-5">
@@ -52,6 +72,12 @@ export default function Sidebar({ selected, setSelected }) {
                     <LogOut className="h-4 w-4 shrink-0" />
                     {open && <span>Logout</span>}
                 </button>
+
+                <button onClick={handleSync} className={`flex h-11 w-full items-center gap-3 px-3 text-sm text-white/40 transition hover:text-white ${!open && "justify-center"}`}>
+                    <CalendarRange className="h-4 w-4 shrink-0" />
+                    {open && <span>Sync Data</span>}
+                </button>
+
                 <button onClick={() => setOpen(!open)} className="flex h-11 w-full items-center justify-center text-white/40 transition hover:text-white">
                     <ChevronsRight className={`h-4 w-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
                 </button>
