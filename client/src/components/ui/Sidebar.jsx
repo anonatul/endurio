@@ -8,7 +8,7 @@ const NAV = [
     { title: "Settings", Icon: Settings },
 ];
 
-export default function Sidebar({ selected, setSelected }) {
+export default function Sidebar({ selected, setSelected, onSync, syncing  }) {
     const [open, setOpen] = useState(true);
 
     const handleLogout = async () => {
@@ -20,26 +20,6 @@ export default function Sidebar({ selected, setSelected }) {
         } finally {
             window.location.href = "/";
         }
-    };
-
-     const handleSync = async () => {
-        console.log("Syncing data...");
-        try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/activities/sync`, {
-                method: "POST",
-                credentials: "include"
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to sync data");
-            }
-
-            const result = await response.json();
-            console.log("Sync result:", result);
-
-        } catch (error) {
-            console.error("Error syncing data:", error);
-        } 
     };
 
     return (
@@ -73,9 +53,9 @@ export default function Sidebar({ selected, setSelected }) {
                     {open && <span>Logout</span>}
                 </button>
 
-                <button onClick={handleSync} className={`flex h-11 w-full items-center gap-3 px-3 text-sm text-white/40 transition hover:text-white ${!open && "justify-center"}`}>
+                <button disabled={syncing} onClick={onSync} className={`flex h-11 w-full items-center gap-3 px-3 text-sm text-white/40 transition hover:text-white ${!open && "justify-center"}`}>
                     <CalendarRange className="h-4 w-4 shrink-0" />
-                    {open && <span>Sync Data</span>}
+                    {open &&  <span>{syncing ? "Syncing.."  : "Sync Data"}</span>}
                 </button>
 
                 <button onClick={() => setOpen(!open)} className="flex h-11 w-full items-center justify-center text-white/40 transition hover:text-white">

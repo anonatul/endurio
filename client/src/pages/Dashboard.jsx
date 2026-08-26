@@ -35,20 +35,37 @@ const formatWeekDate = (isoString) => {
     const endDay = new Date(startDay);
     endDay.setDate(startDay.getDate() + 6);
 
-   const formatter = new Intl.DateTimeFormat("en-GB", { day: 'numeric', month: 'long', timeZone: 'UTC' });
-   const result = formatter.formatRange(startDay, endDay).toLocaleLowerCase();
+    const formatter = new Intl.DateTimeFormat("en-GB", { day: 'numeric', month: 'long', timeZone: 'UTC' });
+    const result = formatter.formatRange(startDay, endDay).toLocaleLowerCase();
 
     return result;
 };
 
 
 export default function Dashboard() {
-    
+
     const [selected, setSelected] = useState("Dashboard");
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [recentRuns, setRecentRuns] = useState([]);
-    
+    const [syncing, setSyncing] = useState(false);
+
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const handleSync = async () => {
+        setSyncing(true);
+        try {
+            await fetch(`${import.meta.env.VITE_API_URL}/activities/sync`, {
+                method: "POST",
+                credentials: "include"
+            });
+        } catch (error) {
+            console.error("Error syncing data:", error);
+        }
+        setSyncing(false);
+        setRefreshKey(k => k + 1); // Trigger a refresh
+    }
+
     useEffect(() => {
         const loadDashboard = async () => {
             try {
@@ -56,15 +73,15 @@ export default function Dashboard() {
                     fetch(`${import.meta.env.VITE_API_URL}/stats/dashboard`, { credentials: "include" }),
                     fetch(`${import.meta.env.VITE_API_URL}/activities?limit=5`, { credentials: "include" })
                 ]);
-    
+
                 const [stats, runs] = await Promise.all([
                     statsRes.json(),
                     runsRes.json()
                 ]);
-                
+
                 setData(stats);
                 setRecentRuns(runs.activities);
-    
+
             } catch (error) {
                 console.error(error);
             } finally {
@@ -72,12 +89,12 @@ export default function Dashboard() {
             };
         };
 
-        loadDashboard();     
-    }, [data, recentRuns]);
+        loadDashboard();
+    }, [refreshKey]);
 
     return (
         <div className="flex min-h-screen bg-[#0B0B0B] text-white">
-            <Sidebar selected={selected} setSelected={setSelected} />
+            <Sidebar selected={selected} setSelected={setSelected} onSync={handleSync} syncing={syncing} />
 
             <main className="flex-1 overflow-auto p-8">
                 <header className="mb-8">
