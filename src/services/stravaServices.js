@@ -74,6 +74,7 @@ export const syncUserActivities = async (userId, token) => {
         let allActivities = [];
 
         console.log('Starting to sync Strava activities...');
+        console.log(`Fetching activities for userId: ${userId} with token: ${token}`);
         while (length !== 0) {
 
             const res = await fetch(`https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`, {
@@ -82,6 +83,8 @@ export const syncUserActivities = async (userId, token) => {
                     'Authorization': `Bearer ${String(token)}`
                 }
             });
+
+            
 
             if(!res.ok) {
                 throw new Error(`Strava API responded with status ${res.status}`);
