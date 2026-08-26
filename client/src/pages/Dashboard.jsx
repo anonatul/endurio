@@ -41,39 +41,39 @@ const formatWeekDate = (isoString) => {
     return result;
 };
 
-export default function Dashboard() {
 
+export default function Dashboard() {
+    
     const [selected, setSelected] = useState("Dashboard");
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [recentRuns, setRecentRuns] = useState([]);
-
+    
     useEffect(() => {
-        const fetchDashboardData = async () => {
+        const loadDashboard = async () => {
             try {
                 const [statsRes, runsRes] = await Promise.all([
                     fetch(`${import.meta.env.VITE_API_URL}/stats/dashboard`, { credentials: "include" }),
                     fetch(`${import.meta.env.VITE_API_URL}/activities?limit=5`, { credentials: "include" })
                 ]);
-
+    
                 const [stats, runs] = await Promise.all([
                     statsRes.json(),
                     runsRes.json()
                 ]);
-
+                
                 setData(stats);
                 setRecentRuns(runs.activities);
-
+    
             } catch (error) {
                 console.error(error);
             } finally {
                 setLoading(false);
-            }
+            };
         };
 
-        fetchDashboardData();
-
-    }, []);
+        loadDashboard();     
+    }, [data, recentRuns]);
 
     return (
         <div className="flex min-h-screen bg-[#0B0B0B] text-white">
