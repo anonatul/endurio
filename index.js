@@ -72,6 +72,6 @@ app.use("/api/coach", coachRoutes);
 // ----- User Routes -----
 app.use("/api/user", userRoutes);
 
-const server = app.listen(3000, () => {
-    console.log("Server is listening to 3000");
+const server = app.listen(process.env.PORT || 5000, () => {
+    console.log(`Server is listening to ${process.env.PORT || 5000}`);
 });
