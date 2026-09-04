@@ -149,6 +149,7 @@ export const syncUserActivities = async (userId, token) => {
 
         };
 
+        await client.query('UPDATE users SET initial_sync_status = true, last_synced_at = NOW() WHERE id = $1', [userId]);
         await client.query('COMMIT');
         console.log(`Successfully synced ${allActivities.length} activities from Strava!`);
 
