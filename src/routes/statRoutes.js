@@ -12,23 +12,26 @@ import { fetchWeeklyMileage,
     fetchLongestRun, 
     fetchRunningConsistency, 
     fetchFastest5K, 
-    fetchFastest10K 
+    fetchFastest10K,
+    fetchUserMetadata 
 } from '../services/statsService.js';
 
 const router = express.Router();
 
+// todo:  need to move this on controller
 const getDashboardData = async (req, res) => {
     const { userId } = req.session;
     
     try {
 
-        const [weeklyMileage, activitySummary, longestRun, runningConsistency, fastest5K, fastest10K] = await Promise.all([
+        const [weeklyMileage, activitySummary, longestRun, runningConsistency, fastest5K, fastest10K, userMetadata] = await Promise.all([
             fetchWeeklyMileage(userId, 7),
             fetchActivitySummary(userId, 30),
             fetchLongestRun(userId, 4),
             fetchRunningConsistency(userId, 4),
             fetchFastest5K(userId),
-            fetchFastest10K(userId)
+            fetchFastest10K(userId),
+            fetchUserMetadata(userId)
         ]);
 
         res.json({
@@ -37,7 +40,8 @@ const getDashboardData = async (req, res) => {
             longestRun,
             runningConsistency,
             fastest5K,
-            fastest10K
+            fastest10K,
+            userMetadata
         });
 
     } catch (error) {
