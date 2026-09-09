@@ -114,3 +114,15 @@ export const fetchRecentRuns = async (userId, limit) => {
         throw new Error("Failed to fetch recent runs");
     };
 };
+
+export const fetchUserMetadata = async (userId) => {
+    const queryText = `SELECT initial_sync_status, last_synced_at FROM users WHERE id = $1;`;
+
+    try {
+        const response = await query(queryText, [userId]);
+        return response.rows[0];
+    } catch (error) {
+        console.log(error);
+        throw new Error("Failed to fetch user metadata");
+    };
+};
