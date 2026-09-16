@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Activity, Clock, Gauge, Flame, TrendingUp, Trophy, Timer, Zap } from "lucide-react";
 
 // components
@@ -49,8 +49,8 @@ export default function Dashboard() {
     const [data, setData] = useState(null);
     const [recentRuns, setRecentRuns] = useState([]);
     const [syncing, setSyncing] = useState(false);
-
     const [refreshKey, setRefreshKey] = useState(0);
+    const hasAutoSynced = useRef(false);
 
     const handleSync = async () => {
         setSyncing(true);
@@ -91,6 +91,15 @@ export default function Dashboard() {
 
         loadDashboard();
     }, [refreshKey]);
+
+    useEffect(() => {
+        if(!loading && data?.userMetadata && !hasAutoSynced.current) {
+            if(data?.userMetadata.initial_sync_status === false) {
+                hasAutoSynced.current = true;
+                handleSync();
+            }
+        }
+    }, [loading, data]);
 
     return (
         <div className="flex min-h-screen bg-[#0B0B0B] text-white">
