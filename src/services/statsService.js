@@ -1,7 +1,7 @@
 import { query } from "../db/pool.js";
 
 export const fetchWeeklyMileage = async (userId, weeks) => {
-    const queryText = `SELECT DATE_TRUNC('week', start_date_local) AS week_start, SUM(distance) / 1000 AS distance_km 
+    const queryText = `SELECT DATE_TRUNC('week', start_date_local) AS week_start, SUM(distance) / 1000 AS distance_km, SUM(moving_time) / 3600.0 AS moving_time_hours, SUM(total_elevation_gain) AS total_elevation_gain, COUNT(*) AS total_runs,  SUM(moving_time) / 60.0 / (NULLIF(SUM(distance), 0) / 1000) AS avg_pace
                        FROM activities 
                        WHERE user_id = $1 AND sport_type = 'Run' 
                        GROUP BY week_start ORDER BY week_start DESC LIMIT $2;
