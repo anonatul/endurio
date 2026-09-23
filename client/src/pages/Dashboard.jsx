@@ -52,6 +52,8 @@ export default function Dashboard() {
     const [refreshKey, setRefreshKey] = useState(0);
     const hasAutoSynced = useRef(false);
 
+
+    
     const handleSync = async () => {
         setSyncing(true);
         try {
@@ -65,7 +67,7 @@ export default function Dashboard() {
         setSyncing(false);
         setRefreshKey(k => k + 1); // Trigger a refresh
     }
-
+    
     useEffect(() => {
         const loadDashboard = async () => {
             try {
@@ -78,29 +80,36 @@ export default function Dashboard() {
                     statsRes.json(),
                     runsRes.json()
                 ]);
-
+                
                 setData(stats);
                 setRecentRuns(runs.activities);
-
+                
             } catch (error) {
                 console.error(error);
             } finally {
                 setLoading(false);
             };
         };
-
+        
         loadDashboard();
     }, [refreshKey]);
-
+    
     useEffect(() => {
-        if(!loading && data?.userMetadata && !hasAutoSynced.current) {
-            if(data?.userMetadata.initial_sync_status === false) {
+        if (!loading && data?.userMetadata && !hasAutoSynced.current) {
+            if (data?.userMetadata.initial_sync_status === false) {
                 hasAutoSynced.current = true;
                 handleSync();
             }
         }
     }, [loading, data]);
-
+    
+    // Weekly Data
+    const totalRuns = data?.weeklyMileage?.map(week => parseFloat(week.total_runs)).reduce((accumulator, current) => accumulator + current, 0);
+    const totalHours = data?.weeklyMileage?.map(week => parseFloat(week.moving_time_hours)).reduce((accumulator, current) => accumulator + current, 0);
+    const totalDistance = data?.weeklyMileage?.map(week => parseFloat(week.distance_km)).reduce((accumulator, current) => accumulator + current, 0); 
+    const avgPace = totalHours*60 / totalDistance;
+    const totalElevation = data?.weeklyMileage?.map(week => parseFloat(week.total_elevation_gain)).reduce((accumulator, current) => accumulator + current, 0);
+    
     return (
         <div className="flex min-h-screen bg-[#0B0B0B] text-white">
             <Sidebar selected={selected} setSelected={setSelected} onSync={handleSync} syncing={syncing} />
@@ -174,6 +183,26 @@ export default function Dashboard() {
                 <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <section className="border border-white/[0.06] bg-[#0A0A0A] p-6 lg:col-span-2">
                         <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-white/40">Weekly Mileage</h2>
+                        <div className="mb-12 flex gap-6">
+                            <div>
+                                <p className="text-sm text-white/40">Total Runs</p>
+                                <p className="text-xl font-bold">{totalRuns}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-white/40">Total Hours</p>
+                                <p className="text-xl font-bold">{Math.floor(totalHours)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-white/40">Avg Pace</p>
+                                <p className="text-xl font-bold">{formatPace(avgPace)}/km</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-white/40">Elevation</p>
+                                <p className="text-xl font-bold">{totalElevation}m</p>
+                            </div>
+                        </div>
+
+
                         <div className="flex items-end gap-3">
                             {data?.weeklyMileage?.slice().reverse().map((week, i) => (
                                 <div key={i} className="flex flex-1 flex-col items-center gap-2">
