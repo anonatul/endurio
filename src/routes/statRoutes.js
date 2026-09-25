@@ -1,4 +1,6 @@
 import express from 'express';
+import cache from '../utils/cache.js';
+
 import { getWeeklyMileage, 
     getActivitySummary, 
     getLongestRun, 
@@ -21,8 +23,15 @@ const router = express.Router();
 // todo:  need to move this on controller
 const getDashboardData = async (req, res) => {
     const { userId } = req.session;
+    const cacheKey = `dashboardData:${userId}`;
     
     try {
+
+        const cached = cache.get(cacheKey);
+        if(cached) {
+            console.log("cached data")
+            return res.json({ ...cached, cached: true  });
+        };
 
         const [weeklyMileage, activitySummary, longestRun, runningConsistency, fastest5K, fastest10K, userMetadata] = await Promise.all([
             fetchWeeklyMileage(userId, 7),
@@ -34,7 +43,7 @@ const getDashboardData = async (req, res) => {
             fetchUserMetadata(userId)
         ]);
 
-        res.json({
+        const dashboardData = {
             weeklyMileage,
             activitySummary,
             longestRun,
@@ -42,6 +51,13 @@ const getDashboardData = async (req, res) => {
             fastest5K,
             fastest10K,
             userMetadata
+        };
+
+        cache.set(cacheKey, dashboardData);
+        console.log("DB call");
+        res.json({
+            ...dashboardData,
+            cached: false
         });
 
     } catch (error) {
