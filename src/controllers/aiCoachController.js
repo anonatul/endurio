@@ -1,6 +1,6 @@
 import { query } from "../db/pool.js";
 import { generateChatResponse, generateTrainingPlan } from "../services/aiCoachService.js";
-import { getUserProfile } from "../controllers/userController.js";
+import { getUserProfile } from "../services/userService.js";
 
 // Notes: 
 // Architecture Pattern: 
