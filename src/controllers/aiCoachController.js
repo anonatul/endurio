@@ -29,9 +29,11 @@ export const getChatResponse = async (req, res) => {
     const userInput = { role: 'user', content: message };
 
     const fetchChatHistoryQuery = `
-    SELECT role, content
-    FROM chat_history 
-    WHERE user_id = $1;
+    SELECT role, content FROM (
+    SELECT role, content, created_at FROM chat_history
+    WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20
+    ) recent
+    ORDER BY created_at ASC;
     `;
 
     const insertChatHistoryQuery = `
@@ -100,9 +102,9 @@ export const getTrainingPlan = async (req, res) => {
         try {
             const planResult = await query(insertTrainingPlanQuery, [userId, goal, raceDate, durationWeeks, currentWeek, rawPlan, planStatus]);
             const planId = planResult.rows?.[0]?.id;
-            
+
             console.log('Plan Inserted!!');
-            
+
             res.status(200).json({
                 id: planId,
                 trainingPlan
