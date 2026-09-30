@@ -1,5 +1,6 @@
 import { query } from '../db/pool.js';
 import pool from '../db/pool.js';
+import cache from '../utils/cache.js';
 
 export const exchangeCodeForToken = async (authCode) => {
     
@@ -151,6 +152,7 @@ export const syncUserActivities = async (userId, token) => {
 
         await client.query('UPDATE users SET initial_sync_status = true, last_synced_at = NOW() WHERE id = $1', [userId]);
         await client.query('COMMIT');
+        cache.del(`dashboardData:${userId}`);
         console.log(`Successfully synced ${allActivities.length} activities from Strava!`);
 
         return allActivities.length;
