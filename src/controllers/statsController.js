@@ -83,7 +83,7 @@ export const getActivitySummary = async (req, res) => {
         // - ROUND(SUM(moving_time)/3600.0, 1)  AS total_hours: this will sum the moving time in seconds and convert it to hours, rounded to 1 decimal place
         // - SUM(moving_time) / 60.0 / (SUM(distance) / 1000) AS avg_pace_per_km: this will calculate the average pace per kilometer in minutes per kilometer
         // - AVG(average_heartrate) AS avg_hr: this will calculate the average heart rate
-        const data = await fetchAcitivitySummary(userId, days);
+        const data = await fetchActivitySummary(userId, days);
 
         res.status(200).json({
             success: true,
