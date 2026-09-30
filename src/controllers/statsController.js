@@ -4,8 +4,11 @@ import {
     fetchRunningConsistency,
     fetchWeeklyMileage,
     fetchFastest5K,
-    fetchFastest10K
+    fetchFastest10K,
+    fetchUserMetadata
 } from "../services/statsService.js";
+
+import cache from '../utils/cache.js';
 
 // Weekly mileage for last N weeks 
 export const getWeeklyMileage = async (req, res) => {
@@ -234,5 +237,50 @@ export const getFastest10K = async (req, res) => {
         res.status(500).json({
             error: "Failed to fetch fastest 10K time"
         });
+    };
+}
+
+export const getDashboardData = async (req, res) => {
+    const { userId } = req.session;
+    const cacheKey = `dashboardData:${userId}`;
+    
+    try {
+
+        const cached = cache.get(cacheKey);
+        if(cached) {
+            console.log("cached data")
+            return res.json({ ...cached, cached: true  });
+        };
+
+        const [weeklyMileage, activitySummary, longestRun, runningConsistency, fastest5K, fastest10K, userMetadata] = await Promise.all([
+            fetchWeeklyMileage(userId, 7),
+            fetchActivitySummary(userId, 30),
+            fetchLongestRun(userId, 4),
+            fetchRunningConsistency(userId, 4),
+            fetchFastest5K(userId),
+            fetchFastest10K(userId),
+            fetchUserMetadata(userId)
+        ]);
+
+        const dashboardData = {
+            weeklyMileage,
+            activitySummary,
+            longestRun,
+            runningConsistency,
+            fastest5K,
+            fastest10K,
+            userMetadata
+        };
+
+        cache.set(cacheKey, dashboardData);
+        console.log("DB call");
+        res.json({
+            ...dashboardData,
+            cached: false
+        });
+
+    } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     };
 }
