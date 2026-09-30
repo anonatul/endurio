@@ -98,7 +98,7 @@ export default function Dashboard() {
         if (!loading && data?.userMetadata && !hasAutoSynced.current) {
             if (data?.userMetadata.initial_sync_status === false) {
                 hasAutoSynced.current = true;
-                handleSync();
+                queueMicrotask(() => handleSync());
             }
         }
     }, [loading, data]);
