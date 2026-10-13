@@ -8,7 +8,7 @@ import {
     fetchUserMetadata
 } from "../services/statsService.js";
 
-import cache from '../utils/cache.js';
+import cache, { dashboardKey } from '../utils/cache.js';
 
 // Weekly mileage for last N weeks 
 export const getWeeklyMileage = async (req, res) => {
@@ -242,7 +242,7 @@ export const getFastest10K = async (req, res) => {
 
 export const getDashboardData = async (req, res) => {
     const { userId } = req.session;
-    const cacheKey = `dashboardData:${userId}`;
+    const cacheKey = dashboardKey(userId);
     
     try {
 
