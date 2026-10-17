@@ -11,6 +11,7 @@ import { verifyDatabaseConnection } from './src/db/pool.js';
 import initCronJobs from './src/services/cronServices.js';
 import statRoutes from './src/routes/statRoutes.js';
 import coachRoutes from './src/routes/coachRoutes.js';
+import planRoutes from './src/routes/planRoutes.js';
 
 config();
 verifyDatabaseConnection();
@@ -68,6 +69,9 @@ app.use("/api/stats", statRoutes);
 
 // ----- Coach AI Routes -----
 app.use("/api/coach", coachRoutes);
+
+// ----- Plan Routes -----
+app.use("/api/plans", planRoutes);
 
 // ----- User Routes -----
 app.use("/api/user", userRoutes);
