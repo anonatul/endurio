@@ -1,4 +1,4 @@
-import { query } from "../db/pool.js";
+import pool, { query } from "../db/pool.js";
 import { getUserProfile } from "../services/userService.js";
 import { generateTrainingPlan } from "../services/aiCoachService.js";
 
@@ -27,25 +27,35 @@ export const createTrainingPlan = async (req, res) => {
         const insertTrainingPlanQuery = `
                                     INSERT INTO plans (user_id, goal, race_date, duration_weeks, current_week, raw_plan, status)
                                     VALUES ($1, $2, $3, $4, $5, $6, $7)
-                                    RETURNING id;
+                                    RETURNING id, goal, race_date, duration_weeks, current_week, raw_plan, status;
         `;
 
         console.log('Writing Plan to DB...');
+        const client = await pool.connect();
         try {
-            const planResult = await query(insertTrainingPlanQuery, [userId, goal, raceDate, durationWeeks, currentWeek, rawPlan, planStatus]);
-            const planId = planResult.rows?.[0]?.id;
+
+            await client.query('BEGIN');
+
+            await client.query(`UPDATE plans SET status = 'archived', updated_at = NOW()
+                                WHERE user_id = $1 AND status = 'active';
+                `, [userId]);
+
+            const planResult = await client.query(insertTrainingPlanQuery, [userId, goal, raceDate, durationWeeks, currentWeek, rawPlan, planStatus]);
 
             console.log('Plan Inserted!!');
 
+            await client.query('COMMIT');
             res.status(200).json({
-                id: planId,
-                trainingPlan
+                plan: planResult.rows[0]
             });
         } catch (dbError) {
+            await client.query('ROLLBACK');
             console.error('DB Insert failed:', dbError.message);
             res.status(500).json({
                 error: "Failed to save training plan to database."
             });
+        } finally {
+            client.release();
         };
 
     } catch (error) {
