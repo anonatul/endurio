@@ -1,9 +1,7 @@
 import 'dotenv/config'
-import { trainingPlanSchema } from '../schemas/trainingPlan.schema.js';
-import { GoogleGenAI } from '@google/genai';
-import { CHAT_SYSTEM_PROMPT, PLAN_GENERATION_PROMPT, PLAN_GENERATION_PROMPT_LIGHT } from '../config/prompts.js';
+import { CHAT_SYSTEM_PROMPT, PLAN_GENERATION_PROMPT } from '../config/prompts.js';
 
-const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { ai, AI_MODEL } from './aiProvider.js';
 
 // What i learned:
 // - what is SDK - SDK provides a set of tools, lib,
@@ -12,16 +10,13 @@ const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const generateChatResponse = async (messages) => {
     try {
-        const chatCompletion = await aiClient.models.generateContent({
-            model: "gemini-3-flash-preview",
-            systemInstruction: CHAT_SYSTEM_PROMPT,
-            contents: messages.map(m => ({
-                role: m.role === "assistant" ? "model" : "user",
-                parts: [{ text: m.content }]
-            }))
+        const response = await ai.responses.create({
+            model: AI_MODEL,
+            instructions: CHAT_SYSTEM_PROMPT,
+            input: messages.map(m => ({ role: m.role, content: m.content })),
         });
 
-        return chatCompletion.text;
+        return response.output_text;
     } catch (error) {
         console.error('AI Service Error:', error);
         throw new Error('Failed to generate AI response');
@@ -29,30 +24,46 @@ export const generateChatResponse = async (messages) => {
 };
 
 export const generateTrainingPlan = async (userProfile) => {
+
+    const weeks = userProfile?.goals?.duration_weeks || 12;
+    const today = new Date().toLocaleDateString('en-CA');
+
     try {
-        const chatCompletion = await aiClient.models.generateContent({
-            model: "gemini-3-flash-preview",
-            systemInstruction: PLAN_GENERATION_PROMPT,
-            contents: [{
-                role: "user",
-                parts: [{
-                    text: `Generate exactly ${userProfile?.goals?.duration_weeks || 12 } weeks of training.
-                           Here is the athlete profile:
-                           ${JSON.stringify(userProfile, null, 2)}
-                           Return only valid JSON.` 
-                        }]
-            }],
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: trainingPlanSchema,
-                temperature: 0,
-                topP: 0.1
-            }
+        const response = await ai.responses.create({
+            model: AI_MODEL,
+
+            instructions: `${PLAN_GENERATION_PROMPT}
+            ## Required top-level keys
+            Output one object with exactly these keys, no extras, no "trainingPlan" wrapper:
+            plan_metadata, athlete_snapshot, training_paces, phases, weeks, coach_instructions`,
+
+            input: `Today is ${today}. Start the plan on the next Monday on or after today.
+                    Generate exactly ${weeks} weeks of training.
+                    Here is the athlete profile:
+                    ${JSON.stringify(userProfile, null, 2)}
+                    Return only valid JSON.`,
+
+            text: { format: { type: 'json_object' } }
         });
 
-        const trainingPlan = JSON.parse(chatCompletion.text);
+        if (response.status !== "completed") {
+            throw new Error(`AI ${response.status}: ${JSON.stringify(response.incomplete_details ?? response.error)}`);
+        };
 
-        return trainingPlan;
+        const raw = response.output_text
+            .trim()
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/```$/, "")
+            .trim();
+
+        const plan = JSON.parse(raw);
+
+        if (!Array.isArray(plan.weeks) || plan.weeks.length !== weeks) {
+            throw new Error(`Bad plan shape: got ${plan.weeks?.length} weeks, expected ${weeks}`);
+        };
+
+        return plan;
+
     } catch (error) {
         console.error('AI Service Error:', error);
         throw new Error('Failed to generate Training Plan');

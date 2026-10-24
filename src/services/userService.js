@@ -1,3 +1,5 @@
+import { query } from "../db/pool.js";
+
 export const getUserProfile = async (userId) => {
     
     const fetchUserProfileQuery = `SELECT profile FROM users WHERE id = $1`;

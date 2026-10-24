@@ -18,7 +18,7 @@ export const createTrainingPlan = async (req, res) => {
         const trainingPlan = await generateTrainingPlan(userProfile);
 
         const goal = userProfile.goals.primary_goal;
-        const raceDate = userProfile.goals.goal_race_date;
+        const raceDate = userProfile.goals.goal_race_date || null;
         const durationWeeks = userProfile.goals.duration_weeks;
         const currentWeek = 1;
         const rawPlan = trainingPlan;
@@ -30,7 +30,6 @@ export const createTrainingPlan = async (req, res) => {
                                     RETURNING id, goal, race_date, duration_weeks, current_week, raw_plan, status;
         `;
 
-        console.log('Writing Plan to DB...');
         const client = await pool.connect();
         try {
 
@@ -42,15 +41,13 @@ export const createTrainingPlan = async (req, res) => {
 
             const planResult = await client.query(insertTrainingPlanQuery, [userId, goal, raceDate, durationWeeks, currentWeek, rawPlan, planStatus]);
 
-            console.log('Plan Inserted!!');
-
             await client.query('COMMIT');
             res.status(200).json({
                 plan: planResult.rows[0]
             });
         } catch (dbError) {
             await client.query('ROLLBACK');
-            console.error('DB Insert failed:', dbError.message);
+            console.error('DB Insert failed:', dbError);
             res.status(500).json({
                 error: "Failed to save training plan to database."
             });
