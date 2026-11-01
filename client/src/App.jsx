@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Onboard from "./pages/Onboard";
 import Dashboard from "./pages/Dashboard";
+import Plan from "./pages/Plan";
 import { ProtectedRoute } from "./utils/ProtectedRoute";
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/onboard" element={<ProtectedRoute><Onboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/plan" element={<ProtectedRoute><Plan /></ProtectedRoute>} />
     </Routes>
   );  
 }

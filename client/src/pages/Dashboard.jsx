@@ -44,7 +44,6 @@ const formatWeekDate = (isoString) => {
 
 export default function Dashboard() {
 
-    const [selected, setSelected] = useState("Dashboard");
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [recentRuns, setRecentRuns] = useState([]);
@@ -125,7 +124,7 @@ export default function Dashboard() {
 
     return (
         <div className="flex min-h-screen bg-[#0B0B0B] text-white">
-            <Sidebar selected={selected} setSelected={setSelected} onSync={handleSync} syncing={syncing} />
+            <Sidebar onSync={handleSync} syncing={syncing} />
 
             <main className="flex-1 overflow-auto p-8">
                 <header className="mb-8">

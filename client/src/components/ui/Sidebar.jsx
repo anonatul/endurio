@@ -1,15 +1,18 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, CalendarRange, MessageSquare, Settings, ChevronsRight, LogOut } from "lucide-react";
 
 const NAV = [
-    { title: "Dashboard", Icon: LayoutDashboard },
-    { title: "Training Plan", Icon: CalendarRange },
+    { title: "Dashboard", Icon: LayoutDashboard, Path: "/dashboard" },
+    { title: "Training Plan", Icon: CalendarRange, Path: "/plan" },
     { title: "AI Coach", Icon: MessageSquare },
     { title: "Settings", Icon: Settings },
 ];
 
-export default function Sidebar({ selected, setSelected, onSync, syncing  }) {
+export default function Sidebar({ onSync, syncing }) {
     const [open, setOpen] = useState(true);
+    const navigate = useNavigate();
+    const { pathname } = useLocation();
 
     const handleLogout = async () => {
         try {
@@ -30,15 +33,14 @@ export default function Sidebar({ selected, setSelected, onSync, syncing  }) {
             </div>
 
             <div className="flex-1 space-y-1 px-2">
-                {NAV.map(({ title, Icon }) => {
-                    const isSelected = selected === title;
+                {NAV.map(({ title, Icon, Path }) => {
+                    const isSelected = pathname === Path;
                     return (
                         <button
                             key={title}
-                            onClick={() => setSelected(title)}
-                            className={`flex h-11 w-full items-center gap-3 px-3 text-sm transition ${
-                                isSelected ? "border-l-2 border-white bg-white/[0.06] text-white" : "text-white/40 hover:bg-white/[0.03] hover:text-white/70"
-                            }`}
+                            onClick={() => Path && navigate(Path)}
+                            className={`flex h-11 w-full items-center gap-3 px-3 text-sm transition ${isSelected ? "border-l-2 border-white bg-white/[0.06] text-white" : "text-white/40 hover:bg-white/[0.03] hover:text-white/70"
+                                }`}
                         >
                             <Icon className="h-4 w-4 shrink-0" />
                             {open && <span className="truncate">{title}</span>}
@@ -53,10 +55,10 @@ export default function Sidebar({ selected, setSelected, onSync, syncing  }) {
                     {open && <span>Logout</span>}
                 </button>
 
-                <button disabled={syncing} onClick={onSync} className={`flex h-11 w-full items-center gap-3 px-3 text-sm text-white/40 transition hover:text-white ${!open && "justify-center"}`}>
+                {onSync && <button disabled={syncing} onClick={onSync} className={`flex h-11 w-full items-center gap-3 px-3 text-sm text-white/40 transition hover:text-white ${!open && "justify-center"}`}>
                     <CalendarRange className="h-4 w-4 shrink-0" />
-                    {open &&  <span>{syncing ? "Syncing.."  : "Sync Data"}</span>}
-                </button>
+                    {open && <span>{syncing ? "Syncing.." : "Sync Data"}</span>}
+                </button>}
 
                 <button onClick={() => setOpen(!open)} className="flex h-11 w-full items-center justify-center text-white/40 transition hover:text-white">
                     <ChevronsRight className={`h-4 w-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
