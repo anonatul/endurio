@@ -10,8 +10,10 @@ if (!process.env.DATABASE_URL) {
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
+    idleTimeoutMillis: 15000,
+    connectionTimeoutMillis: 10000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000
 });
 
 pool.on("error", (error) => {
@@ -20,14 +22,20 @@ pool.on("error", (error) => {
 
 export const query = (text, params) => pool.query(text, params);
 
-export const verifyDatabaseConnection = async () => {
-    try {
-        await pool.query('SELECT NOW()');
-        console.log('----------- ✅ Database connected ✅ -----------');
-    } catch (error) {
-        console.log('----------- ❌ Database connection failed ❌ -----------');
-        console.error(error);
-        process.exit(1);
+export const verifyDatabaseConnection = async (attempts = 3) => {
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            await pool.query('SELECT NOW()');
+            console.log('----------- ✅ Database connected ✅ -----------');
+            return true;
+        } catch (error) {
+            console.log(`DB connect attempt ${attempt}/${attempts} failed: ${error.message}`);
+            if (attempt === attempts) {
+                console.error('Starting anyway — pool will retry on first request.');
+                return false;
+            }
+            await new Promise(r => setTimeout(r, attempt * 2000));
+        }
     }
 };
 
