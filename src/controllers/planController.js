@@ -1,6 +1,26 @@
 import pool, { query } from "../db/pool.js";
 import { getUserProfile } from "../services/userService.js";
 import { generateTrainingPlan } from "../services/aiCoachService.js";
+import { fetchWeeklyMileage, fetchRecentRuns } from "../services/statsService.js";
+
+const getRefreshedProfile = async (userId, userProfile) => {
+    try {
+        const [weeklyMileageHistory, recentRuns] = await Promise.all([
+            fetchWeeklyMileage(userId, 8),
+            fetchRecentRuns(userId, 5)
+        ]);
+
+        return {
+            ...userProfile,
+            weekly_mileage_history: weeklyMileageHistory,
+            recent_runs: recentRuns
+        };
+    } catch (error) {
+        console.warn("Could not refresh training stats, using saved profile:", error.message);
+
+        return userProfile;
+    }
+};
 
 export const createTrainingPlan = async (req, res) => {
     const { userId } = req.session;
@@ -15,7 +35,8 @@ export const createTrainingPlan = async (req, res) => {
 
     try {
         const userProfile = await getUserProfile(userId);
-        const trainingPlan = await generateTrainingPlan(userProfile);
+        const planProfile = await getRefreshedProfile(userId, userProfile);
+        const trainingPlan = await generateTrainingPlan(planProfile);
 
         const goal = userProfile.goals.primary_goal;
         const raceDate = userProfile.goals.goal_race_date || null;
