@@ -77,6 +77,7 @@ function Plan() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const triggerRef = useRef(null);
     const closeTimer = useRef(null);
+    const tabRefs = useRef([]);
 
     const openSession = (day, element) => {
         window.clearTimeout(closeTimer.current);
@@ -151,6 +152,10 @@ function Plan() {
         loadPlan();
     }, []);
 
+    useEffect(() => {
+        tabRefs.current[activeWeek]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }, [activeWeek]);
+
     const weeks = plan?.raw_plan?.weeks || [];
     const week = weeks[activeWeek];
     const todayKey = new Date().toLocaleDateString("en-CA");
@@ -197,6 +202,30 @@ function Plan() {
         : planPhase === "complete"
             ? "Build next plan"
             : "Regenerate plan";
+
+    const handleRailKeyDown = (event) => {
+        const lastIndex = weeks.length - 1;
+        let nextIndex = null;
+
+        if (event.key === "ArrowRight") {
+            nextIndex = activeWeek === lastIndex ? 0 : activeWeek + 1;
+        } else if (event.key === "ArrowLeft") {
+            nextIndex = activeWeek === 0 ? lastIndex : activeWeek - 1;
+        } else if (event.key === "Home") {
+            nextIndex = 0;
+        } else if (event.key === "End") {
+            nextIndex = lastIndex;
+        }
+
+        if (nextIndex === null || lastIndex < 0) return;
+
+        event.preventDefault();
+        setActiveWeek(nextIndex);
+        setSelectedDay(null);
+        setPanelClosing(false);
+
+        requestAnimationFrame(() => tabRefs.current[nextIndex]?.focus());
+    };
 
     return (
         <div className="flex min-h-screen bg-[#0B0B0B] text-white">
@@ -314,38 +343,74 @@ function Plan() {
 
                 {!loading && !error && week && (
                     <>
-                        <div className="no-scrollbar flex gap-1 overflow-x-auto border-b border-white/[0.08]">
-                            {weeks.map((weekItem, index) => {
-                                const isActive = index === activeWeek;
+                        <div className="no-scrollbar overflow-x-auto">
+                            <div
+                                role="tablist"
+                                aria-label="Training weeks"
+                                onKeyDown={handleRailKeyDown}
+                                className="flex w-max min-w-full gap-1 border-b border-white/[0.08]"
+                            >
+                                {weeks.map((weekItem, index) => {
+                                    const isActive = index === activeWeek;
+                                    const isCurrent = index === weekIndex;
+                                    const endDate = weekItem.week_range?.end_date;
+                                    const isPast = Boolean(endDate) && endDate < todayKey;
+                                    const weekNumber = String(weekItem.week_number ?? index + 1).padStart(2, "0");
 
-                                return (
-                                    <button
-                                        key={weekItem.week_number ?? index}
-                                        onClick={() => {
-                                            setActiveWeek(index);
-                                            setSelectedDay(null);
-                                            setPanelClosing(false);
-                                        }}
-                                        aria-pressed={isActive}
-                                        className="group relative shrink-0 cursor-pointer px-4 pb-3 pt-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00]"
-                                    >
-                                        <span className="block text-[10px] uppercase tracking-[0.18em] text-white/35">WK</span>
-                                        <span className={`block text-2xl font-medium tabular-nums transition-colors duration-150 ${
-                                            isActive ? "text-white" : "text-white/40 group-hover:text-white/70"
-                                        }`}>
-                                            {weekItem.week_number ?? index + 1}
-                                        </span>
-                                        {isActive ? (
-                                            <span className="rail-line absolute inset-x-0 -bottom-px h-px bg-[#CCFF00]" />
-                                        ) : (
-                                            <span className="absolute inset-x-0 -bottom-px h-px bg-white/20 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
-                                        )}
-                                    </button>
-                                );
-                            })}
+                                    return (
+                                        <button
+                                            key={weekItem.week_number ?? index}
+                                            id={`week-tab-${index}`}
+                                            ref={(element) => {
+                                                tabRefs.current[index] = element;
+                                            }}
+                                            role="tab"
+                                            aria-selected={isActive}
+                                            aria-controls="week-panel"
+                                            tabIndex={isActive ? 0 : -1}
+                                            onClick={() => {
+                                                setActiveWeek(index);
+                                                setSelectedDay(null);
+                                                setPanelClosing(false);
+                                            }}
+                                            className="group relative shrink-0 cursor-pointer px-4 pb-3 pt-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00]"
+                                        >
+                                            <span className={`block text-[10px] uppercase tracking-[0.18em] transition-colors duration-150 ${
+                                                isActive || isCurrent ? "text-white/40" : "text-white/25"
+                                            }`}>
+                                                WK
+                                            </span>
+                                            <span className={`relative block text-2xl font-medium tabular-nums transition-colors duration-150 ${
+                                                isActive || isCurrent
+                                                    ? "text-white"
+                                                    : isPast
+                                                        ? "text-white/25"
+                                                        : "text-white/40"
+                                            } ${!isActive && !isCurrent ? "group-hover:text-white/70" : ""}`}>
+                                                {weekNumber}
+                                                {isCurrent && (
+                                                    <span className="absolute -right-2 top-1 size-[3px] bg-[#CCFF00]" aria-hidden="true" />
+                                                )}
+                                            </span>
+                                            {isCurrent && <span className="sr-only">current week</span>}
+                                            {isActive ? (
+                                                <span className="rail-line absolute inset-x-0 -bottom-px h-px bg-[#CCFF00]" />
+                                            ) : (
+                                                <span className="absolute inset-x-0 -bottom-px h-px bg-white/20 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
 
-                        <div key={activeWeek} className="week-in">
+                        <div
+                            key={activeWeek}
+                            id="week-panel"
+                            role="tabpanel"
+                            aria-labelledby={`week-tab-${activeWeek}`}
+                            className="week-in"
+                        >
                             <div className="mt-6 border-b border-white/[0.06] pb-5">
                                 <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
                                     <div>
