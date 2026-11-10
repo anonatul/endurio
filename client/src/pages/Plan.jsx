@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, CalendarRange, X } from "lucide-react";
+import { ArrowUpRight, CalendarRange, Loader2, X } from "lucide-react";
 
 import Sidebar from "../components/ui/Sidebar";
 
@@ -28,6 +28,42 @@ const formatWeekRange = (weekRange) => {
     return formatter.formatRange(new Date(weekRange.start_date), new Date(weekRange.end_date));
 };
 
+const useDialogFocus = (panelRef, onClose) => {
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                onClose();
+                return;
+            }
+
+            if (event.key !== "Tab" || !panelRef.current) return;
+
+            const focusable = Array.from(
+                panelRef.current.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                )
+            ).filter((element) => !element.disabled);
+
+            if (focusable.length === 0) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [panelRef, onClose]);
+};
+
 function Plan() {
 
     const [plan, setPlan] = useState(null);
@@ -36,6 +72,9 @@ function Plan() {
     const [activeWeek, setActiveWeek] = useState(0);
     const [selectedDay, setSelectedDay] = useState(null);
     const [panelClosing, setPanelClosing] = useState(false);
+    const [generating, setGenerating] = useState(false);
+    const [generateError, setGenerateError] = useState(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
     const triggerRef = useRef(null);
     const closeTimer = useRef(null);
 
@@ -56,6 +95,35 @@ function Plan() {
             setPanelClosing(false);
             triggerRef.current?.focus();
         }, 180);
+    };
+
+    const handleGenerate = async () => {
+        if (generating) return;
+
+        setDialogOpen(false);
+        setGenerating(true);
+        setGenerateError(null);
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/plans`, {
+                method: "POST",
+                credentials: "include"
+            });
+
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(result.error || "Couldn't build your plan. Try again.");
+            }
+
+            setPlan(result.plan);
+            setActiveWeek(0);
+            setSelectedDay(null);
+        } catch (error) {
+            setGenerateError(error.message);
+        } finally {
+            setGenerating(false);
+        }
     };
 
     useEffect(() => {
@@ -98,14 +166,74 @@ function Plan() {
         { label: "Sessions", value: week?.training_days, unit: null }
     ].filter(({ value }) => value !== undefined && value !== null);
 
+    const firstWeekStart = weeks[0]?.week_range?.start_date;
+    const lastWeekEnd = weeks[weeks.length - 1]?.week_range?.end_date;
+
+    const weekIndex = weeks.findIndex((item) => {
+        const start = item.week_range?.start_date;
+        const end = item.week_range?.end_date;
+
+        return start && end && todayKey >= start && todayKey <= end;
+    });
+
+    const currentWeekNumber = weekIndex >= 0 ? weekIndex + 1 : 1;
+
+    const planPhase = !firstWeekStart
+        ? "active"
+        : todayKey < firstWeekStart
+            ? "upcoming"
+            : lastWeekEnd && todayKey > lastWeekEnd
+                ? "complete"
+                : "active";
+
+    const daysUntilStart = firstWeekStart
+        ? Math.max(0, Math.round(
+            (Date.parse(`${firstWeekStart}T00:00:00Z`) - Date.parse(`${todayKey}T00:00:00Z`)) / 86400000
+        ))
+        : 0;
+
+    const regenerateLabel = planPhase === "upcoming"
+        ? "Replace plan"
+        : planPhase === "complete"
+            ? "Build next plan"
+            : "Regenerate plan";
+
     return (
         <div className="flex min-h-screen bg-[#0B0B0B] text-white">
             <Sidebar />
 
-            <main className={`no-scrollbar flex-1 p-8 ${selectedDay ? "overflow-hidden" : "overflow-auto"}`}>
+            <main className={`no-scrollbar flex-1 p-8 ${selectedDay || dialogOpen ? "overflow-hidden" : "overflow-auto"}`}>
                 <header className="mb-8">
-                    <h1 className="text-2xl font-bold tracking-tight">Training Plan</h1>
-                    <p className="mt-1 text-sm text-white/40">Your week-by-week schedule</p>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Training Plan</h1>
+                            <p className="mt-1 text-sm text-white/40">Your week-by-week schedule</p>
+                        </div>
+
+                        {!loading && !error && plan && (
+                            generating ? (
+                                <span className="inline-flex items-center gap-2 border border-white/[0.12] px-3 py-1.5 text-xs text-white/50">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    Building your plan…
+                                </span>
+                            ) : (
+                                <button
+                                    onClick={() => setDialogOpen(true)}
+                                    className={`cursor-pointer border px-3 py-1.5 text-xs transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00] ${
+                                        planPhase === "active"
+                                            ? "border-[#FF6B6B]/25 text-[#FF6B6B]/75 hover:border-[#FF6B6B]/60 hover:text-[#FF6B6B]"
+                                            : "border-white/[0.12] text-white/60 hover:border-white/[0.25] hover:text-white"
+                                    }`}
+                                >
+                                    {regenerateLabel}
+                                </button>
+                            )
+                        )}
+                    </div>
+
+                    {generateError && plan && (
+                        <p role="alert" className="mt-3 text-xs text-white/60">{generateError}</p>
+                    )}
                 </header>
 
                 {loading && (
@@ -156,12 +284,31 @@ function Plan() {
                             and your recent running.
                         </p>
                         <button
-                            disabled
-                            className="mt-6 border border-white bg-white px-5 py-2.5 text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={handleGenerate}
+                            disabled={generating}
+                            className="mt-6 inline-flex cursor-pointer items-center gap-2 border border-white bg-white px-5 py-2.5 text-sm font-semibold text-black transition disabled:cursor-wait disabled:opacity-60"
                         >
-                            Generate plan
+                            {generating ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Building your plan…
+                                </>
+                            ) : (
+                                "Generate plan"
+                            )}
                         </button>
-                        <p className="mt-3 text-[11px] text-white/25">Takes about a minute.</p>
+
+                        {generating && (
+                            <span className="mx-auto mt-4 block h-px w-48 overflow-hidden bg-white/10">
+                                <span className="loading-bar block h-px w-1/3 bg-[#CCFF00]" />
+                            </span>
+                        )}
+
+                        {generateError ? (
+                            <p role="alert" className="mt-3 text-xs text-white/60">{generateError}</p>
+                        ) : (
+                            <p className="mt-3 text-[11px] text-white/25">Takes about a minute. Keep this tab open.</p>
+                        )}
                     </section>
                 )}
 
@@ -243,6 +390,19 @@ function Plan() {
             </main>
 
             {selectedDay && <SessionPanel day={selectedDay} closing={panelClosing} onClose={closeSession} />}
+
+            {dialogOpen && plan && (
+                <RegenerateDialog
+                    phase={planPhase}
+                    currentWeek={currentWeekNumber}
+                    totalWeeks={weeks.length}
+                    startDate={firstWeekStart}
+                    endDate={lastWeekEnd}
+                    daysUntilStart={daysUntilStart}
+                    onClose={() => setDialogOpen(false)}
+                    onConfirm={handleGenerate}
+                />
+            )}
         </div>
     );
 };
@@ -455,37 +615,7 @@ const SessionPanel = ({ day, closing, onClose }) => {
         { label: "Zone", value: day.intensity_zone, unit: null }
     ].filter(({ value }) => value !== undefined && value !== null && value !== "");
 
-    useEffect(() => {
-        const handleKeyDown = (event) => {
-            if (event.key === "Escape") {
-                onClose();
-                return;
-            }
-
-            if (event.key !== "Tab" || !panelRef.current) return;
-
-            const focusable = panelRef.current.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-
-            if (focusable.length === 0) return;
-
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
-        };
-
-        document.addEventListener("keydown", handleKeyDown);
-
-        return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [onClose]);
+    useDialogFocus(panelRef, onClose);
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end">
@@ -571,6 +701,118 @@ const SessionPanel = ({ day, closing, onClose }) => {
                         <p className="mt-2 text-[13px] leading-relaxed text-white/60">{day.notes}</p>
                     </div>
                 )}
+            </section>
+        </div>
+    );
+};
+
+const RegenerateDialog = ({ phase, currentWeek, totalWeeks, startDate, endDate, daysUntilStart, onClose, onConfirm }) => {
+    const [acknowledged, setAcknowledged] = useState(false);
+    const panelRef = useRef(null);
+
+    useDialogFocus(panelRef, onClose);
+
+    const requiresAcknowledgment = phase === "active";
+
+    const title = phase === "upcoming"
+        ? "Replace your plan?"
+        : phase === "complete"
+            ? "Build your next plan?"
+            : "Regenerate your plan?";
+
+    const description = phase === "upcoming"
+        ? `Your plan starts ${formatDate(startDate)}${daysUntilStart > 0 ? ` — ${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"} from now` : ""}. Replacing it before it starts costs nothing.`
+        : phase === "complete"
+            ? `Your plan finished ${formatDate(endDate)}. Build the next block from your latest training.`
+            : `You're in week ${currentWeek} of ${totalWeeks}. This plan runs ${formatDate(startDate)} – ${formatDate(endDate)}.`;
+
+    const consequences = requiresAcknowledgment
+        ? [
+            "The current plan is archived and disappears from this page",
+            "The new plan starts at week 1, not where you are now",
+            "Weeks you've already run can't be carried over"
+        ]
+        : [
+            "The current plan is archived",
+            "The new plan is built from your goal and your latest synced runs",
+            "It takes about a minute to generate"
+        ];
+
+    const confirmLabel = phase === "upcoming"
+        ? "Replace plan"
+        : phase === "complete"
+            ? "Build next plan"
+            : "Regenerate plan";
+
+    const destructive = phase === "active";
+
+    return (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+            <div className="panel-backdrop absolute inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
+
+            <section
+                ref={panelRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="regenerate-title"
+                className="dialog-in relative w-full max-w-md border border-white/[0.08] bg-[#0A0A0A] p-6"
+            >
+                <div className="flex items-start justify-between gap-4">
+                    <h2 id="regenerate-title" className="text-lg font-medium tracking-tight">{title}</h2>
+
+                    <button
+                        onClick={onClose}
+                        autoFocus
+                        aria-label="Close dialog"
+                        className="grid size-7 shrink-0 cursor-pointer place-content-center border border-white/[0.08] text-white/40 transition-colors duration-150 hover:border-white/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00]"
+                    >
+                        <X className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+
+                <p className="mt-3 text-[13px] leading-relaxed text-white/50">{description}</p>
+
+                <ul className="mt-4 space-y-2">
+                    {consequences.map((item) => (
+                        <li key={item} className="flex gap-2.5 text-xs leading-relaxed text-white/40">
+                            <span className="mt-[7px] h-px w-2 shrink-0 bg-white/25" aria-hidden="true" />
+                            {item}
+                        </li>
+                    ))}
+                </ul>
+
+                {requiresAcknowledgment && (
+                    <label className="mt-5 flex cursor-pointer items-start gap-2.5 border border-white/[0.06] p-3 text-xs leading-relaxed text-white/50">
+                        <input
+                            type="checkbox"
+                            checked={acknowledged}
+                            onChange={(event) => setAcknowledged(event.target.checked)}
+                            className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer accent-[#CCFF00]"
+                        />
+                        I understand my plan restarts at week 1
+                    </label>
+                )}
+
+                <div className="mt-6 flex items-center justify-end gap-4">
+                    <button
+                        onClick={onClose}
+                        className="cursor-pointer text-xs text-white/40 transition-colors duration-150 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00]"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        onClick={onConfirm}
+                        disabled={requiresAcknowledgment && !acknowledged}
+                        className={`cursor-pointer border px-4 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                            destructive
+                                ? "border-[#FF6B6B] bg-[#FF6B6B] text-[#0B0B0B] hover:border-[#FF8080] hover:bg-[#FF8080] focus-visible:outline-[#FF6B6B]"
+                                : "border-white bg-white text-black hover:bg-white/90 focus-visible:outline-white"
+                        }`}
+                    >
+                        {confirmLabel}
+                    </button>
+                </div>
             </section>
         </div>
     );
