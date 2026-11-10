@@ -374,7 +374,7 @@ function Plan() {
                                 {weekNotes && <p className="mt-4 max-w-2xl text-xs leading-relaxed text-white/35">{weekNotes}</p>}
                             </div>
 
-                            <div className="mt-6 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="mt-6 grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                                 {(week.days || []).map((day) => (
                                     <DayCard
                                         key={day.date}
@@ -418,19 +418,11 @@ const DayCard = ({ day, isToday, onSelect }) => {
     if (day.rest) {
         return (
             <article
-                onClick={(event) => onSelect(event.currentTarget)}
-                onKeyDown={handleKeyDown}
-                role="button"
-                tabIndex={0}
-                aria-label={`Open ${day.day} session details`}
-                className={`group cursor-pointer border border-white/[0.05] bg-white/[0.015] px-4 py-3 transition-colors duration-150 hover:border-white/[0.10] hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00] ${isToday ? "border-l-2 border-l-[#CCFF00]" : ""}`}
+                className={`flex h-full flex-col border border-white/[0.05] bg-white/[0.015] p-4 ${isToday ? "border-l-2 border-l-[#CCFF00]" : ""}`}
             >
                 <div className="flex items-baseline justify-between gap-2">
                     <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">{day.day}</p>
-                    <span className="flex items-center gap-1.5">
-                        <p className="text-[10px] text-white/25">{formatDate(day.date)}</p>
-                        <ArrowUpRight className="h-3 w-3 text-white/30 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
-                    </span>
+                    <p className="text-[10px] text-white/25">{formatDate(day.date)}</p>
                 </div>
 
                 <p className="mt-1 text-[13px] font-medium text-white/30">{day.workout_type}</p>
@@ -446,14 +438,11 @@ const DayCard = ({ day, isToday, onSelect }) => {
             role="button"
             tabIndex={0}
             aria-label={`Open ${day.day} session details`}
-            className={`group cursor-pointer border border-white/[0.08] bg-[#0A0A0A] p-4 transition-colors duration-150 hover:border-white/[0.16] hover:bg-[#0E0E0E] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00] ${isToday ? "border-l-2 border-l-[#CCFF00]" : ""}`}
+            className={`group flex h-full cursor-pointer flex-col border border-white/[0.08] bg-[#0A0A0A] p-4 transition-colors duration-150 hover:border-white/[0.16] hover:bg-[#0E0E0E] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00] ${isToday ? "border-l-2 border-l-[#CCFF00]" : ""}`}
         >
             <div className="flex items-baseline justify-between gap-2">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">{day.day}</p>
-                <span className="flex items-center gap-1.5">
-                    <p className="text-[10px] text-white/25">{formatDate(day.date)}</p>
-                    <ArrowUpRight className="h-3 w-3 text-white/40 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
-                </span>
+                <p className="text-[10px] text-white/25">{formatDate(day.date)}</p>
             </div>
 
             <p className="mt-3 text-[13px] font-medium text-white">{day.workout_type}</p>
@@ -470,9 +459,18 @@ const DayCard = ({ day, isToday, onSelect }) => {
             </div>
 
             <MainSet mainSet={day.main_set} />
+
+            <CardFooter />
         </article>
     );
 };
+
+const CardFooter = () => (
+    <span className="mt-auto flex items-center gap-1 pt-3 text-[10px] uppercase tracking-[0.15em] text-white/25 transition-colors duration-150 group-hover:text-white/50">
+        Details
+        <ArrowUpRight className="h-3 w-3" />
+    </span>
+);
 
 const humanize = (key) => key.replaceAll("_", " ");
 
