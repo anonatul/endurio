@@ -39,7 +39,7 @@ export const fetchActivitySummary = async (userId, days) => {
 
 export const fetchLongestRun = async (userId, weeks) => {
     const queryText = `
-               SELECT distance
+               SELECT distance, start_date_local
                FROM activities 
                WHERE user_id = $1 AND sport_type = 'Run' AND start_date_local >= NOW() - ($2 * INTERVAL '1 week')
                ORDER BY distance DESC LIMIT 1;   
