@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, CalendarRange, Loader2, X } from "lucide-react";
 
-import Sidebar from "../components/ui/Sidebar";
+import { AppShell } from "../components/ui/AppShell";
 
 const formatDate = (isoString) => {
     if (!isoString) return "";
@@ -228,10 +228,9 @@ function Plan() {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#0B0B0B] text-white">
-            <Sidebar />
-
-            <main className={`no-scrollbar flex-1 p-8 ${selectedDay || dialogOpen ? "overflow-hidden" : "overflow-auto"}`}>
+        <AppShell current="/plan" tone="ink">
+            <main className={`no-scrollbar flex-1 ${selectedDay || dialogOpen ? "overflow-hidden" : "overflow-auto"}`}>
+                <div className="app-container p-8">
                 <header className="mb-8">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
@@ -452,6 +451,7 @@ function Plan() {
                         </div>
                     </>
                 )}
+                </div>
             </main>
 
             {selectedDay && <SessionPanel day={selectedDay} closing={panelClosing} onClose={closeSession} />}
@@ -468,7 +468,7 @@ function Plan() {
                     onConfirm={handleGenerate}
                 />
             )}
-        </div>
+        </AppShell>
     );
 };
 
@@ -681,7 +681,7 @@ const SessionPanel = ({ day, closing, onClose }) => {
     useDialogFocus(panelRef, onClose);
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 plan-overlay flex justify-end">
             <div
                 className={`absolute inset-0 bg-black/60 ${closing ? "panel-backdrop-out" : "panel-backdrop"}`}
                 onClick={onClose}
@@ -810,7 +810,7 @@ const RegenerateDialog = ({ phase, currentWeek, totalWeeks, startDate, endDate, 
     const destructive = phase === "active";
 
     return (
-        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+        <div className="fixed inset-0 plan-overlay grid place-items-center p-4">
             <div className="panel-backdrop absolute inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
 
             <section
