@@ -1,35 +1,47 @@
-@import '@fontsource/dm-sans/400.css';
-@import '@fontsource/dm-sans/500.css';
-@import '@fontsource/dm-sans/700.css';
+/* Hallmark · shape: Training annual (app screen) · genre: modern-minimal · theme: custom, the user-supplied Bone / Ink / Cobalt / Raspberry palette replacing the dealt Coral · redesign: full
+ * nav: ink top bar, four destinations, mobile menu · signature: the weekly volume ruled beside a four-fact register, the plan block and the run log · states: loading, empty, error, syncing, plan upcoming/active/complete
+ * axes: light/grotesk-sans/cobalt · posture: editorial-sport · contrast: pass · v3.0.0 */
+/* Hallmark · scope: this file carries the shared shell (AppShell), the stock controls and the Plan route motion; the dashboard owns its own scoped sheet in src/dashboard.css */
+/* Hallmark · references: Oura (bone canvas, giant figure, cobalt CTA), Runna (horizontal week strip, plan progress), TrainingPeaks (compact metric cards), Tracksmith Journal (editorial scale and rules), Strava (dense activity log) · captured in production 12 Nov 2026 */
+/* Hallmark · dismissed F4 · .btn is the shared stock base; only Sync Strava fills cobalt, the page's sole primary action */
+/* Hallmark · dropped onSync={handleSync} · the sync action moved out of the sidebar into the top bar, the handler itself is unchanged */
 @import '@fontsource/geist/latin-400.css';
 @import '@fontsource/geist/latin-500.css';
+@import '@fontsource/geist/latin-600.css';
 @import '@fontsource/anton/400.css';
 @import 'tailwindcss';
+@import './tokens.css';
+@import './base.css';
+
+@theme inline {
+  --color-canvas: var(--color-desk);
+  --color-surface: var(--color-cotton);
+  --color-sunken: var(--color-paper-2);
+  --color-ink: var(--color-print);
+  --color-ink-soft: var(--color-print-2);
+  --color-muted: var(--color-quiet);
+  --color-line: var(--color-rule);
+  --color-line-strong: var(--color-rule-2);
+  --color-primary: var(--color-print);
+  --color-primary-soft: var(--color-paper-2);
+  --color-signal: var(--color-signal-ink);
+  --color-signal-soft: var(--color-paper-2);
+  --font-mark: var(--font-brand);
+  --shadow-panel: var(--cast-stock-lift), var(--edge-stock);
+  --shadow-card: var(--edge-stock), var(--cast-stock);
+}
 
 html {
   scroll-behavior: smooth;
 }
 
-body {
-  font-family: 'Geist', 'DM Sans', sans-serif;
-  background: #0B0B0B;
-  color: #ffffff;
-  min-width: 320px;
-}
-
 ::selection {
-  background: #ccff00;
-  color: #0a0a0a;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+  background: color-mix(in oklab, var(--color-accent) 22%, transparent);
+  color: var(--color-print);
 }
 
 .focus-ring:focus-visible {
-  outline: 2px solid #CCFF00;
+  outline: 2px solid var(--color-focus);
   outline-offset: 4px;
 }
 
@@ -40,6 +52,281 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* App shell */
+
+.app {
+  min-height: 100dvh;
+  background-color: var(--color-desk);
+  background-image: var(--tex-desk);
+  background-size: 360px 360px;
+  color: var(--color-print);
+  font-family: var(--font-body);
+}
+
+.app-container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  box-sizing: border-box;
+}
+
+.app--ink {
+  background-color: var(--color-board);
+  background-image: none;
+  color: var(--color-board-type);
+}
+
+.app--ink .app-bar {
+  background: var(--color-board);
+}
+
+/* Plan overlays sit above the sticky shell bar. */
+.plan-overlay {
+  z-index: var(--z-modal);
+}
+
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky-nav);
+  background: var(--color-board);
+  color: var(--color-board-type);
+  border-bottom: 1px solid color-mix(in oklab, var(--color-board-type) 14%, transparent);
+}
+
+.app-bar__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  height: 60px;
+}
+
+.app-bar :focus-visible {
+  outline-color: var(--color-focus-dark);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.brand__mark {
+  display: grid;
+  place-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-family: var(--font-brand);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.brand__word {
+  font-family: var(--font-brand);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.app-nav {
+  display: flex;
+  align-self: stretch;
+  gap: var(--space-3xs);
+  margin-left: var(--space-xs);
+}
+
+.app-nav__link--off,
+.app-menu__link--off {
+  color: color-mix(in oklab, var(--color-board-type) 34%, transparent);
+  cursor: not-allowed;
+}
+
+.app-nav__link--off:hover,
+.app-menu__link--off:hover {
+  color: color-mix(in oklab, var(--color-board-type) 34%, transparent);
+}
+
+.app-bar__account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-left: auto;
+}
+
+.bar-link {
+  padding: var(--space-xs) var(--space-3xs);
+  border: 0;
+  background: none;
+  color: color-mix(in oklab, var(--color-board-type) 58%, transparent);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color var(--dur-micro) var(--ease-out);
+}
+
+.bar-link:hover {
+  color: var(--color-board-type);
+}
+
+.bar-menu {
+  display: none;
+  width: 36px;
+  height: 36px;
+  place-content: center;
+  border: 1px solid color-mix(in oklab, var(--color-board-type) 26%, transparent);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-board-type);
+  cursor: pointer;
+}
+
+.bar-menu svg {
+  width: 18px;
+  height: 18px;
+}
+
+.app-menu {
+  border-top: 1px solid color-mix(in oklab, var(--color-board-type) 14%, transparent);
+  background: var(--color-board);
+}
+
+.app-menu .app-container {
+  padding-block: var(--space-xs) var(--space-sm);
+}
+
+.app-menu__link {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-3xs);
+  border: 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-board-type) 12%, transparent);
+  background: none;
+  color: color-mix(in oklab, var(--color-board-type) 72%, transparent);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-menu__link:last-child {
+  border-bottom: 0;
+}
+
+.app-menu__link[aria-current="page"] {
+  color: var(--color-accent-on-dark);
+  font-weight: 600;
+}
+
+.app-menu__link--off {
+  color: color-mix(in oklab, var(--color-board-type) 34%, transparent);
+  cursor: not-allowed;
+}
+
+/* Controls */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 40px;
+  padding: 0 var(--space-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-stock);
+  background: var(--color-cotton);
+  color: var(--color-print);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--edge-stock), var(--cast-stock);
+  transition: transform var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--edge-stock), var(--cast-stock-lift);
+}
+
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: var(--press-groove);
+}
+
+.btn:disabled {
+  border-color: var(--color-rule-2);
+  background: var(--color-paper-2);
+  color: var(--color-quiet);
+  box-shadow: none;
+  cursor: wait;
+  transform: none;
+}
+
+.btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.is-spinning {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 60rem) {
+  .app-nav,
+  .bar-link {
+    display: none;
+  }
+
+  .bar-menu {
+    display: inline-grid;
+  }
+}
+
+@media (min-width: 60.01rem) {
+  .app-menu {
+    display: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .app-bar__inner {
+    height: 56px;
+  }
+
+  .brand__word {
+    font-size: 18px;
+  }
+
+  .brand__mark {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-spinning {
+    animation: none;
+  }
+}
+
+/* Plan page motion (kept for the existing route) */
 
 @keyframes week-in {
   from {
@@ -81,10 +368,6 @@ body {
   }
 }
 
-.panel-in {
-  animation: panel-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 @keyframes panel-out {
   from {
     opacity: 1;
@@ -96,10 +379,6 @@ body {
   }
 }
 
-.panel-out {
-  animation: panel-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
-}
-
 @keyframes backdrop-in {
   from {
     opacity: 0;
@@ -109,21 +388,8 @@ body {
   }
 }
 
-@keyframes backdrop-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
 .panel-backdrop {
   animation: backdrop-in 180ms ease-out both;
-}
-
-.panel-backdrop-out {
-  animation: backdrop-out 180ms ease-in both;
 }
 
 @keyframes dialog-in {
