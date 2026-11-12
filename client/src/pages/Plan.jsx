@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, CalendarRange, Loader2, X } from "lucide-react";
+import { CalendarRange, Loader2, X } from "lucide-react";
 
-import { AppShell } from "../components/ui/AppShell";
+import { DashboardShell } from "../components/dashboard/DashboardShell";
+import "../plan.css";
 
 const formatDate = (isoString) => {
     if (!isoString) return "";
@@ -183,6 +184,26 @@ function Plan() {
 
     const currentWeekNumber = weekIndex >= 0 ? weekIndex + 1 : 1;
 
+    const targets = weeks.map((item) => Number(item.target_distance_km ?? 0));
+    const peakTarget = Math.max(...targets, 1);
+    const floorTarget = Math.min(...targets);
+    const loadRange = peakTarget - floorTarget > 0 ? peakTarget - floorTarget : 1;
+    /* The rail is the plan's volume profile: one point per week, phases marked. */
+    const loadPoints = weeks.map((item, index) => ({
+        x: index * RAIL_CELL + RAIL_CELL / 2,
+        y: RAIL_BASE
+            - ((Number(item.target_distance_km ?? 0) - floorTarget) / loadRange) * (RAIL_BASE - RAIL_TOP)
+    }));
+    const loadLine = loadPoints
+        .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+        .join(" ");
+    const loadArea = loadPoints.length
+        ? `${loadLine} L ${loadPoints[loadPoints.length - 1].x} ${RAIL_BASE} L ${loadPoints[0].x} ${RAIL_BASE} Z`
+        : "";
+    const phaseEdges = weeks
+        .map((item, index) => (index > 0 && item.phase !== weeks[index - 1].phase ? index : null))
+        .filter((value) => value !== null);
+
     const planPhase = !firstWeekStart
         ? "active"
         : todayKey < firstWeekStart
@@ -196,6 +217,16 @@ function Plan() {
             (Date.parse(`${firstWeekStart}T00:00:00Z`) - Date.parse(`${todayKey}T00:00:00Z`)) / 86400000
         ))
         : 0;
+
+    const planStatusLine = [
+        planPhase === "upcoming" && firstWeekStart
+            ? `Starts ${formatDate(firstWeekStart)}`
+            : planPhase === "complete"
+                ? `Ended ${formatDate(lastWeekEnd)}`
+                : `Week ${currentWeekNumber} of ${weeks.length}`,
+        plan?.goal,
+        plan?.race_date ? `Race ${formatDate(plan.race_date)}` : null
+    ].filter(Boolean).join(" · ");
 
     const regenerateLabel = planPhase === "upcoming"
         ? "Replace plan"
@@ -228,29 +259,29 @@ function Plan() {
     };
 
     return (
-        <AppShell current="/plan" tone="ink">
-            <main className={`no-scrollbar flex-1 ${selectedDay || dialogOpen ? "overflow-hidden" : "overflow-auto"}`}>
+        <DashboardShell>
+            <main className={`plan-page no-scrollbar flex-1 ${selectedDay || dialogOpen ? "overflow-hidden" : "overflow-auto"}`}>
                 <div className="app-container p-8">
-                <header className="mb-8">
+                <header className="plan-header mb-8">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight">Training Plan</h1>
-                            <p className="mt-1 text-sm text-white/40">Your week-by-week schedule</p>
+                            <p className="plan-subtitle mt-1 text-sm text-white/40">{planStatusLine}</p>
                         </div>
 
                         {!loading && !error && plan && (
                             generating ? (
-                                <span className="inline-flex items-center gap-2 border border-white/[0.12] px-3 py-1.5 text-xs text-white/50">
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <span className="plan-generating inline-flex items-center gap-2 border border-white/[0.12] px-3 py-1.5 text-xs text-white/50">
+                                    <Loader2 className="plan-spinner h-3.5 w-3.5" />
                                     Building your plan…
                                 </span>
                             ) : (
                                 <button
                                     onClick={() => setDialogOpen(true)}
-                                    className={`cursor-pointer border px-3 py-1.5 text-xs transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00] ${
+                                    className={`plan-header__action cursor-pointer border px-3 py-1.5 text-xs transition-colors duration-150 plan-focus ${
                                         planPhase === "active"
-                                            ? "border-[#FF6B6B]/25 text-[#FF6B6B]/75 hover:border-[#FF6B6B]/60 hover:text-[#FF6B6B]"
-                                            : "border-white/[0.12] text-white/60 hover:border-white/[0.25] hover:text-white"
+                                            ? "plan-regenerate-active"
+                                            : "plan-regenerate"
                                     }`}
                                 >
                                     {regenerateLabel}
@@ -265,7 +296,7 @@ function Plan() {
                 </header>
 
                 {loading && (
-                    <div className="animate-pulse">
+                    <div className="plan-loading">
                         <div className="flex gap-1 border-b border-white/[0.08] pb-3">
                             {Array.from({ length: 12 }).map((_, index) => (
                                 <div key={index} className="h-9 w-11 bg-white/[0.05]" />
@@ -290,21 +321,21 @@ function Plan() {
 
                         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             {Array.from({ length: 4 }).map((_, index) => (
-                                <div key={index} className="h-40 border border-white/[0.06] bg-[#0A0A0A]" />
+                                <div key={index} className="plan-skeleton h-40 border border-white/[0.06]" />
                             ))}
                         </div>
                     </div>
                 )}
 
                 {!loading && error && (
-                    <section className="border border-white/[0.08] bg-[#0A0A0A] p-8">
-                        <p className="text-sm font-medium">Couldn't load your plan</p>
+                    <section className="plan-state plan-state--error border border-white/[0.08] p-8">
+                        <p className="text-sm font-medium">Could not load your plan</p>
                         <p className="mt-1 text-sm text-white/40">{error}</p>
                     </section>
                 )}
 
                 {!loading && !error && !plan && (
-                    <section className="border border-white/[0.08] bg-[#0A0A0A] p-12 text-center">
+                    <section className="plan-state plan-state--empty border border-white/[0.08] p-12 text-center">
                         <CalendarRange className="mx-auto h-6 w-6 text-white/30" />
                         <h2 className="mt-4 text-lg font-bold">No active plan</h2>
                         <p className="mx-auto mt-2 max-w-md text-sm text-white/40">
@@ -318,7 +349,7 @@ function Plan() {
                         >
                             {generating ? (
                                 <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <Loader2 className="plan-spinner h-4 w-4" />
                                     Building your plan…
                                 </>
                             ) : (
@@ -328,7 +359,7 @@ function Plan() {
 
                         {generating && (
                             <span className="mx-auto mt-4 block h-px w-48 overflow-hidden bg-white/10">
-                                <span className="loading-bar block h-px w-1/3 bg-[#CCFF00]" />
+                                <span className="loading-bar plan-accent-bar block h-px w-1/3" />
                             </span>
                         )}
 
@@ -343,11 +374,39 @@ function Plan() {
                 {!loading && !error && week && (
                     <>
                         <div className="no-scrollbar overflow-x-auto">
+                            <p className="plan-rail-caption">
+                                Weekly load {weeks.length > 0 ? `· ${floorTarget}–${peakTarget} km` : ""}
+                            </p>
+                            <div className="plan-rail-figure" aria-hidden="true">
+                                <svg width={weeks.length * RAIL_CELL} height="72" viewBox={`0 0 ${weeks.length * RAIL_CELL} 72`}>
+                                    {phaseEdges.map((edge) => (
+                                        <line
+                                            key={edge}
+                                            x1={edge * RAIL_CELL}
+                                            x2={edge * RAIL_CELL}
+                                            y1="8"
+                                            y2="64"
+                                            className="plan-rail-phase-edge"
+                                        />
+                                    ))}
+                                    <path d={loadArea} className="plan-rail-area" />
+                                    <path d={loadLine} className="plan-rail-line" />
+                                    {loadPoints.map((point, index) => (
+                                        <circle
+                                            key={weeks[index].week_number ?? index}
+                                            cx={point.x}
+                                            cy={point.y}
+                                            r={index === activeWeek ? 3.5 : 2}
+                                            className={`plan-rail-dot${index === activeWeek ? " is-active" : ""}`}
+                                        />
+                                    ))}
+                                </svg>
+                            </div>
                             <div
                                 role="tablist"
                                 aria-label="Training weeks"
                                 onKeyDown={handleRailKeyDown}
-                                className="flex w-max min-w-full gap-1 border-b border-white/[0.08]"
+                                className="plan-week-rail flex w-max min-w-full gap-1 border-b border-white/[0.08]"
                             >
                                 {weeks.map((weekItem, index) => {
                                     const isActive = index === activeWeek;
@@ -372,14 +431,9 @@ function Plan() {
                                                 setSelectedDay(null);
                                                 setPanelClosing(false);
                                             }}
-                                            className="group relative shrink-0 cursor-pointer px-4 pb-3 pt-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00]"
+                                            className="group relative shrink-0 cursor-pointer px-4 pb-3 pt-1 text-left plan-focus"
                                         >
-                                            <span className={`block text-[10px] uppercase tracking-[0.18em] transition-colors duration-150 ${
-                                                isActive || isCurrent ? "text-white/40" : "text-white/25"
-                                            }`}>
-                                                WK
-                                            </span>
-                                            <span className={`relative block text-2xl font-medium tabular-nums transition-colors duration-150 ${
+                                            <span className={`relative block text-lg font-medium tabular-nums transition-colors duration-150 ${
                                                 isActive || isCurrent
                                                     ? "text-white"
                                                     : isPast
@@ -388,12 +442,12 @@ function Plan() {
                                             } ${!isActive && !isCurrent ? "group-hover:text-white/70" : ""}`}>
                                                 {weekNumber}
                                                 {isCurrent && (
-                                                    <span className="absolute -right-2 top-1 size-[3px] bg-[#CCFF00]" aria-hidden="true" />
+                                                    <span className="plan-current-marker absolute -right-2 top-1" aria-hidden="true" />
                                                 )}
                                             </span>
                                             {isCurrent && <span className="sr-only">current week</span>}
                                             {isActive ? (
-                                                <span className="rail-line absolute inset-x-0 -bottom-px h-px bg-[#CCFF00]" />
+                                                <span className="rail-line plan-accent-line absolute inset-x-0 -bottom-px h-px" />
                                             ) : (
                                                 <span className="absolute inset-x-0 -bottom-px h-px bg-white/20 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
                                             )}
@@ -408,12 +462,12 @@ function Plan() {
                             id="week-panel"
                             role="tabpanel"
                             aria-labelledby={`week-tab-${activeWeek}`}
-                            className="week-in"
+                            className="plan-panel week-in"
                         >
-                            <div className="mt-6 border-b border-white/[0.06] pb-5">
+                            <div className="plan-week-summary mt-6 border-b border-white/[0.06] pb-5">
                                 <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-                                    <div>
-                                        <p className="text-[10px] uppercase tracking-[0.18em] text-white/30">
+                                    <div className="plan-week-heading">
+                                        <p className="plan-week-label text-[10px] text-white/30">
                                             Week {String(week.week_number ?? activeWeek + 1).padStart(2, "0")}
                                         </p>
                                         {week.phase && <p className="mt-1.5 text-lg font-medium">{week.phase}</p>}
@@ -422,23 +476,23 @@ function Plan() {
                                         </p>
                                     </div>
 
-                                    <div className="flex items-end">
+                                    <div className="plan-week-metrics flex items-end">
                                         {weekMetrics.map(({ label, value, unit }, index) => (
                                             <div key={label} className={index > 0 ? "border-l border-white/[0.08] pl-6 ml-6" : ""}>
                                                 <p className="text-xl font-medium leading-none tabular-nums">
                                                     {value}
                                                     {unit && <span className="ml-1 text-[11px] font-normal text-white/40">{unit}</span>}
                                                 </p>
-                                                <p className="mt-1.5 text-[10px] uppercase tracking-[0.15em] text-white/30">{label}</p>
+                                                <p className="mt-1.5 text-[10px] text-white/30">{label}</p>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                {weekNotes && <p className="mt-4 max-w-2xl text-xs leading-relaxed text-white/35">{weekNotes}</p>}
+                                {weekNotes && <p className="plan-week-note mt-4 max-w-2xl text-xs leading-relaxed text-white/35">{weekNotes}</p>}
                             </div>
 
-                            <div className="mt-6 grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="plan-session-grid mt-6 grid items-start grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                                 {(week.days || []).map((day) => (
                                     <DayCard
                                         key={day.date}
@@ -468,7 +522,7 @@ function Plan() {
                     onConfirm={handleGenerate}
                 />
             )}
-        </AppShell>
+        </DashboardShell>
     );
 };
 
@@ -483,11 +537,11 @@ const DayCard = ({ day, isToday, onSelect }) => {
     if (day.rest) {
         return (
             <article
-                className={`flex h-full flex-col border border-white/[0.05] bg-white/[0.015] p-4 ${isToday ? "border-l-2 border-l-[#CCFF00]" : ""}`}
+                className={`plan-session plan-session--rest flex flex-col p-4 ${isToday ? "is-today" : ""}`}
             >
                 <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">{day.day}</p>
-                    <p className="text-[10px] text-white/25">{formatDate(day.date)}</p>
+                    <p className="text-[11px] text-white/40">{day.day}</p>
+                    <p className="text-[11px] text-white/25">{formatDate(day.date)}</p>
                 </div>
 
                 <p className="mt-1 text-[13px] font-medium text-white/30">{day.workout_type}</p>
@@ -503,14 +557,18 @@ const DayCard = ({ day, isToday, onSelect }) => {
             role="button"
             tabIndex={0}
             aria-label={`Open ${day.day} session details`}
-            className={`group flex h-full cursor-pointer flex-col border border-white/[0.08] bg-[#0A0A0A] p-4 transition-colors duration-150 hover:border-white/[0.16] hover:bg-[#0E0E0E] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00] ${isToday ? "border-l-2 border-l-[#CCFF00]" : ""}`}
+            className={`plan-session group flex cursor-pointer flex-col p-4 transition-colors duration-150 plan-session-action plan-focus ${isToday ? "is-today" : ""}`}
         >
             <div className="flex items-baseline justify-between gap-2">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">{day.day}</p>
-                <p className="text-[10px] text-white/25">{formatDate(day.date)}</p>
+                <p className="text-[11px] text-white/40">{day.day}</p>
+                <p className="text-[11px] text-white/25">{formatDate(day.date)}</p>
             </div>
 
             <p className="mt-3 text-[13px] font-medium text-white">{day.workout_type}</p>
+
+            {zoneLabel(day.intensity_zone) && (
+                <p className="plan-zone-word mt-1 text-[13px] font-semibold">{zoneLabel(day.intensity_zone)}</p>
+            )}
 
             <p className="mt-1 text-3xl font-medium tabular-nums tracking-tight">
                 {day.distance_km}
@@ -520,24 +578,63 @@ const DayCard = ({ day, isToday, onSelect }) => {
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/40">
                 {day.duration_minutes ? <span>{day.duration_minutes} min</span> : null}
                 {day.pace_readable ? <span>{day.pace_readable}</span> : null}
-                {day.intensity_zone ? <span>{day.intensity_zone}</span> : null}
             </div>
 
             <MainSet mainSet={day.main_set} />
 
-            <CardFooter />
+            <ZoneLadder zone={day.intensity_zone} />
         </article>
     );
 };
 
-const CardFooter = () => (
-    <span className="mt-auto flex items-center gap-1 pt-3 text-[10px] uppercase tracking-[0.15em] text-white/25 transition-colors duration-150 group-hover:text-white/50">
-        Details
-        <ArrowUpRight className="h-3 w-3" />
-    </span>
-);
+const ZoneLadder = ({ zone }) => {
+    const active = zoneStep(zone);
+
+    if (active === -1) return null;
+
+    return (
+        <span className="plan-zone-ladder mt-auto flex items-end gap-[3px] pt-4" aria-hidden="true">
+            {ZONE_LADDER.map((step, index) => (
+                <span
+                    key={step.id}
+                    className={`plan-zone-step${index <= active ? " is-on" : ""}`}
+                    style={{ height: `${6 + index * 4}px` }}
+                />
+            ))}
+        </span>
+    );
+};
+
+const RAIL_CELL = 64;
+const RAIL_TOP = 8;
+const RAIL_BASE = 64;
 
 const humanize = (key) => key.replaceAll("_", " ");
+
+/* The effort ladder, the way a coach reads a week: recovery first, race last. */
+const ZONE_LADDER = [
+    { id: "recovery", label: "Recovery", matches: ["recovery"] },
+    { id: "easy", label: "Easy", matches: ["easy"] },
+    { id: "steady", label: "Steady", matches: ["steady", "aerobic"] },
+    { id: "tempo", label: "Tempo", matches: ["tempo", "threshold"] },
+    { id: "interval", label: "Interval", matches: ["interval", "repetition", "strides"] },
+    { id: "race", label: "Race", matches: ["race"] }
+];
+
+const zoneStep = (zone) => {
+    if (!zone) return -1;
+
+    const value = String(zone).toLowerCase();
+    if (value === "rest") return -1;
+
+    return ZONE_LADDER.findIndex((step) => step.matches.some((token) => value.includes(token)));
+};
+
+const zoneLabel = (zone) => {
+    const step = zoneStep(zone);
+
+    return step === -1 ? null : ZONE_LADDER[step].label;
+};
 
 const asMinutes = (value) => (typeof value === "number" ? `${value} min` : String(value));
 
@@ -693,11 +790,11 @@ const SessionPanel = ({ day, closing, onClose }) => {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="session-title"
-                className={`no-scrollbar relative h-full w-full max-w-md overflow-y-auto border-l border-white/[0.08] bg-[#0A0A0A] p-6 ${closing ? "panel-out" : "panel-in"}`}
+                className={`no-scrollbar relative h-full w-full max-w-md overflow-y-auto border-l border-white/[0.08] plan-overlay-panel p-6 ${closing ? "panel-out" : "panel-in"}`}
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-white/35">
+                        <p className="plan-detail-meta text-[10px] text-white/35">
                             {day.day}
                             {formatDate(day.date) && ` · ${formatDate(day.date)}`}
                         </p>
@@ -711,7 +808,7 @@ const SessionPanel = ({ day, closing, onClose }) => {
                         onClick={onClose}
                         autoFocus
                         aria-label="Close session details"
-                        className="grid size-8 shrink-0 cursor-pointer place-content-center border border-white/[0.08] text-white/40 transition-colors duration-150 hover:border-white/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00]"
+                        className="grid size-8 shrink-0 cursor-pointer place-content-center border border-white/[0.08] text-white/40 transition-colors duration-150 hover:border-white/20 hover:text-white plan-focus"
                     >
                         <X className="h-4 w-4" />
                     </button>
@@ -720,8 +817,8 @@ const SessionPanel = ({ day, closing, onClose }) => {
                 {metrics.length > 0 && (
                     <div className="mt-6 grid grid-cols-2 gap-px border border-white/[0.06] bg-white/[0.06]">
                         {metrics.map(({ label, value, unit }) => (
-                            <div key={label} className="bg-[#0A0A0A] p-4">
-                                <p className="text-[10px] uppercase tracking-[0.15em] text-white/30">{label}</p>
+                            <div key={label} className="plan-detail-metric p-4">
+                                <p className="text-[10px] text-white/30">{label}</p>
                                 <p className="mt-1.5 text-xl font-medium leading-none tabular-nums">
                                     {value}
                                     {unit && <span className="ml-1 text-[11px] font-normal text-white/40">{unit}</span>}
@@ -733,7 +830,7 @@ const SessionPanel = ({ day, closing, onClose }) => {
 
                 {parsed && (
                     <div className="mt-6">
-                        <p className="text-[10px] uppercase tracking-[0.18em] text-white/30">Session</p>
+                        <p className="text-[10px] text-white/30">Session</p>
 
                         {parsed.headline && (
                             <p className="mt-2 text-lg font-medium leading-snug tabular-nums">{parsed.headline}</p>
@@ -760,7 +857,7 @@ const SessionPanel = ({ day, closing, onClose }) => {
 
                 {day.notes && (
                     <div className="mt-6 border-t border-white/[0.06] pt-4">
-                        <p className="text-[10px] uppercase tracking-[0.18em] text-white/30">Notes</p>
+                        <p className="text-[10px] text-white/30">Notes</p>
                         <p className="mt-2 text-[13px] leading-relaxed text-white/60">{day.notes}</p>
                     </div>
                 )}
@@ -818,7 +915,7 @@ const RegenerateDialog = ({ phase, currentWeek, totalWeeks, startDate, endDate, 
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="regenerate-title"
-                className="dialog-in relative w-full max-w-md border border-white/[0.08] bg-[#0A0A0A] p-6"
+                className="dialog-in relative w-full max-w-md border border-white/[0.08] plan-dialog p-6"
             >
                 <div className="flex items-start justify-between gap-4">
                     <h2 id="regenerate-title" className="text-lg font-medium tracking-tight">{title}</h2>
@@ -827,7 +924,7 @@ const RegenerateDialog = ({ phase, currentWeek, totalWeeks, startDate, endDate, 
                         onClick={onClose}
                         autoFocus
                         aria-label="Close dialog"
-                        className="grid size-7 shrink-0 cursor-pointer place-content-center border border-white/[0.08] text-white/40 transition-colors duration-150 hover:border-white/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00]"
+                        className="grid size-7 shrink-0 cursor-pointer place-content-center border border-white/[0.08] text-white/40 transition-colors duration-150 hover:border-white/20 hover:text-white plan-focus"
                     >
                         <X className="h-3.5 w-3.5" />
                     </button>
@@ -850,7 +947,7 @@ const RegenerateDialog = ({ phase, currentWeek, totalWeeks, startDate, endDate, 
                             type="checkbox"
                             checked={acknowledged}
                             onChange={(event) => setAcknowledged(event.target.checked)}
-                            className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer accent-[#CCFF00]"
+                            className="plan-checkbox mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer"
                         />
                         I understand my plan restarts at week 1
                     </label>
@@ -859,7 +956,7 @@ const RegenerateDialog = ({ phase, currentWeek, totalWeeks, startDate, endDate, 
                 <div className="mt-6 flex items-center justify-end gap-4">
                     <button
                         onClick={onClose}
-                        className="cursor-pointer text-xs text-white/40 transition-colors duration-150 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#CCFF00]"
+                        className="cursor-pointer text-xs text-white/40 transition-colors duration-150 hover:text-white plan-focus"
                     >
                         Cancel
                     </button>
@@ -869,8 +966,8 @@ const RegenerateDialog = ({ phase, currentWeek, totalWeeks, startDate, endDate, 
                         disabled={requiresAcknowledgment && !acknowledged}
                         className={`cursor-pointer border px-4 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                             destructive
-                                ? "border-[#FF6B6B] bg-[#FF6B6B] text-[#0B0B0B] hover:border-[#FF8080] hover:bg-[#FF8080] focus-visible:outline-[#FF6B6B]"
-                                : "border-white bg-white text-black hover:bg-white/90 focus-visible:outline-white"
+                                ? "plan-danger-button"
+                                : "plan-primary-button"
                         }`}
                     >
                         {confirmLabel}
