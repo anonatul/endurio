@@ -56,3 +56,6 @@ Thumbs.db
 
 ## Documentation
 docs/
+# local design review artefacts
+.hallmark/
+client/public/__snapshot.html
