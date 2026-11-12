@@ -49,4 +49,18 @@
   --cast-stock: 6px 5px 10px -6px oklch(var(--shade) / 0.22); --cast-stock-lift: 12px 10px 18px -8px oklch(var(--shade) / 0.26);
   --press-groove: inset 1px 1.5px 2px oklch(var(--shade) / 0.16), inset -1px -1px 0 oklch(var(--lit) / 0.9), 0 0 0 0.5px oklch(var(--shade) / 0.2);
   --tracking-display: -0.03em; --display-weight: 600;
+
+  /* Dashboard sheet (/dashboard) */
+  --dw-canvas: #F4F3EF; --dw-surface: #FBFAF6; --dw-surface-2: #F4F2EC; --dw-surface-3: #EEEBE4;
+  --dw-ghost: #DDD9CF; --dw-cal-rest: #F0EEE7; --dw-bone: #E7E4DD; --dw-scrollbar: #C7C3BA;
+  --dw-ink: #1C1C1A; --dw-ink-2: #5E5C56; --dw-ink-raised: #30302D; --dw-muted: #8B8981;
+  --dw-off: #AAA79F; --dw-off-icon: #B9B6AE;
+  --dw-line: #EAE7E0; --dw-line-soft: #EEECE6; --dw-line-strong: #D8D4CA;
+  --dw-paper: #FFFFFF; --dw-on-ink-70: rgb(255 255 255 / 70%); --dw-on-ink-82: rgb(255 255 255 / 82%);
+  --dw-ink-025: rgb(28 28 26 / 2.5%); --dw-ink-03: rgb(28 28 26 / 3%); --dw-ink-06: rgb(28 28 26 / 6%);
+  --dw-ink-08: rgb(28 28 26 / 8%); --dw-ink-14: rgb(28 28 26 / 14%); --dw-ink-32: rgb(28 28 26 / 32%);
+  --dw-ink-34: rgb(28 28 26 / 34%); --dw-ink-42: rgb(28 28 26 / 42%); --dw-ink-55: rgb(28 28 26 / 55%);
+  --dw-green: #2F6B4F; --dw-green-bg: #EAF4EE; --dw-orange: #925316; --dw-orange-bg: #FDF1E4;
+  --dw-danger: #B23A48; --dw-danger-bg: #FBEDEE; --dw-alert-line: #EFD4D8;
+  --dw-pill-gray-bg: #F1EFE9; --dw-pill-gray-ink: #6D6A62;
 }

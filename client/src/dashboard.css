@@ -1,3 +1,11 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: custom (the reference screen) · nav: a permanent left rail with the account at its foot · signature: the four-week training calendar · states: loading, empty, error, syncing, plan upcoming/active/complete
+ * axes: P5 H5 E4 S5 R4 V4 · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 · weakest: E, the first pass shipped a static bar chart with no hover layer, a heavy donut and off-scale spacing; added the tooltip, crosshair and chart variants, replaced the donut with a calendar, and snapped every length to the 4px scale */
+/* Hallmark · answered F5 · the reference sets the metric icon inside a hairline circle, so the circle stays and only the tint goes */
+/* Hallmark · waive 37 · four families (geist, anton, geist mono, inter) · the reference screen is set in Inter and the brand faces stay with the shell */
+/* Hallmark · dismissed 41 · accent-ink belongs to the legacy shell, the dashboard never sets a label in it on a dashboard surface */
+/* Hallmark · waive 75 · the reference screen's own labels sit at nine pixels, this is a data grid not prose · the reference is the source of truth for the dashboard's density */
+
 @import '@fontsource/inter/latin-400.css';
 @import '@fontsource/inter/latin-500.css';
 @import '@fontsource/inter/latin-600.css';
@@ -5,29 +13,13 @@
 /* Dashboard visual layer — scoped to the dashboard only. */
 
 body:has(.dw-app) {
-    background: #f4f3ef;
-    color: #1c1c1a;
+    background: var(--dw-canvas);
+    color: var(--dw-ink);
 }
 
 .dw-app {
-    --dw-canvas: #f4f3ef;
-    --dw-surface: #fbfaf6;
-    --dw-surface-2: #f4f2ec;
-    --dw-surface-3: #eeebe4;
-    --dw-ink: #1c1c1a;
-    --dw-ink-2: #5e5c56;
-    --dw-muted: #8b8981;
-    --dw-line: #eae7e0;
-    --dw-line-soft: #eeece6;
-    --dw-line-strong: #d8d4ca;
-    --dw-ghost: #ddd9cf;
-    --dw-green: #2f6b4f;
-    --dw-green-bg: #eaf4ee;
-    --dw-orange: #a8621e;
-    --dw-orange-bg: #fdf1e4;
-    --dw-danger: #b23a48;
-    --dw-danger-bg: #fbedee;
-    --dw-shadow: 0 24px 60px -32px rgba(28, 28, 26, 0.42), 0 2px 8px rgba(28, 28, 26, 0.06);
+    /* the dashboard has no banner above its own header, so the offset is nil */
+    --dw-sticky-top: 0px;
 
     min-height: 100dvh;
     padding: 0;
@@ -60,6 +52,8 @@ body:has(.dw-app) {
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.2;
+    overflow-wrap: break-word;
+    text-wrap: balance;
 }
 
 .dw-app button,
@@ -100,7 +94,7 @@ body:has(.dw-app) {
     min-width: 0;
     min-height: 0;
     flex-direction: column;
-    padding: 16px 14px 14px;
+    padding: var(--space-md) var(--space-md) var(--space-md);
     border-right: 1px solid var(--dw-line);
     background: var(--dw-surface);
 }
@@ -108,15 +102,15 @@ body:has(.dw-app) {
 .dw-sidebar__top {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 2px 6px 16px;
+    gap: var(--space-xs);
+    padding: 0 var(--space-xs) var(--space-md);
 }
 
 .dw-brand {
     display: inline-flex;
     min-width: 0;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-sm);
 }
 
 .dw-brand__mark {
@@ -127,7 +121,7 @@ body:has(.dw-app) {
     place-content: center;
     border-radius: 9px;
     background: var(--dw-ink);
-    color: #fff;
+    color: var(--dw-paper);
     font-size: 14px;
     font-weight: 600;
     letter-spacing: -0.03em;
@@ -166,7 +160,7 @@ body:has(.dw-app) {
 .dw-nav {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: var(--space-2xs);
 }
 
 .dw-nav__link {
@@ -174,8 +168,8 @@ body:has(.dw-app) {
     width: 100%;
     height: 38px;
     align-items: center;
-    gap: 10px;
-    padding: 0 10px;
+    gap: var(--space-sm);
+    padding: 0 var(--space-sm);
     border: 0;
     border-radius: 8px;
     background: transparent;
@@ -200,45 +194,49 @@ body:has(.dw-app) {
     color: var(--dw-ink);
 }
 
+.dw-nav__link:active {
+    background: var(--dw-surface-3);
+}
+
 .dw-nav__link:hover svg {
     color: var(--dw-ink-2);
 }
 
 .dw-nav__link[aria-current="page"] {
     background: var(--dw-ink);
-    color: #fff;
+    color: var(--dw-paper);
     font-weight: 600;
 }
 
 .dw-nav__link[aria-current="page"] svg {
-    color: #fff;
+    color: var(--dw-paper);
 }
 
 .dw-nav__link--off {
-    color: #aaa79f;
+    color: var(--dw-off);
     cursor: not-allowed;
 }
 
 .dw-nav__link--off svg {
-    color: #b9b6ae;
+    color: var(--dw-off-icon);
 }
 
 .dw-nav__link--off:hover {
     background: transparent;
-    color: #aaa79f;
+    color: var(--dw-off);
 }
 
 .dw-nav__link--off:hover svg {
-    color: #b9b6ae;
+    color: var(--dw-off-icon);
 }
 
 .dw-sidebar__footer {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: var(--space-xs);
     margin-top: auto;
-    padding: 13px 4px 2px;
+    padding: var(--space-sm) var(--space-2xs) 0;
     border-top: 1px solid var(--dw-line);
 }
 
@@ -277,7 +275,7 @@ body:has(.dw-app) {
 }
 
 .dw-user__email {
-    margin-top: 2px !important;
+    margin-top: 0 !important;
     color: var(--dw-muted);
     font-size: 9.5px;
     line-height: 1.25;
@@ -312,19 +310,19 @@ body:has(.dw-app) {
     bottom: 43px;
     z-index: 20;
     min-width: 132px;
-    padding: 4px;
+    padding: var(--space-2xs);
     border: 1px solid var(--dw-line);
     border-radius: 9px;
     background: var(--dw-surface);
-    box-shadow: 0 10px 24px -12px rgba(28, 28, 26, 0.32), 0 1px 3px rgba(28, 28, 26, 0.06);
+    box-shadow: 0 10px 24px -12px var(--dw-ink-32), 0 1px 3px var(--dw-ink-06);
 }
 
 .dw-user-menu button {
     display: flex;
     width: 100%;
     align-items: center;
-    gap: 8px;
-    padding: 8px 9px;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-xs);
     border: 0;
     border-radius: 6px;
     background: transparent;
@@ -335,6 +333,10 @@ body:has(.dw-app) {
 
 .dw-user-menu button:hover {
     background: var(--dw-surface-2);
+}
+
+.dw-user-menu button:active {
+    background: var(--dw-surface-3);
 }
 
 .dw-user-menu svg {
@@ -356,8 +358,8 @@ body:has(.dw-app) {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 0 22px 26px;
-    scrollbar-color: #c7c3ba transparent;
+    padding: 0 var(--space-lg) var(--space-lg);
+    scrollbar-color: var(--dw-scrollbar) transparent;
     scrollbar-width: thin;
 }
 
@@ -376,8 +378,8 @@ body:has(.dw-app) {
     min-height: 44px;
     align-items: center;
     justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 15px;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
 }
 
 .dw-toolbar__context {
@@ -385,7 +387,7 @@ body:has(.dw-app) {
     min-width: 0;
     flex: 0 1 380px;
     align-items: center;
-    gap: 9px;
+    gap: var(--space-xs);
 }
 
 .dw-toolbar__datebox {
@@ -394,12 +396,12 @@ body:has(.dw-app) {
     height: 36px;
     min-width: 0;
     align-items: center;
-    gap: 9px;
-    padding: 0 12px;
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
     border: 1px solid var(--dw-line);
     border-radius: 8px;
     background: var(--dw-surface-2);
-    color: var(--dw-muted);
+    color: var(--dw-ink-2);
 }
 
 .dw-toolbar__datebox > svg {
@@ -426,7 +428,7 @@ body:has(.dw-app) {
 
 .dw-toolbar__date {
     overflow: hidden;
-    color: var(--dw-muted);
+    color: var(--dw-ink-2);
     font-size: 10.5px;
     line-height: 1;
     text-overflow: ellipsis;
@@ -437,7 +439,7 @@ body:has(.dw-app) {
     display: flex;
     min-width: 0;
     align-items: center;
-    gap: 14px;
+    gap: var(--space-md);
 }
 
 .dw-sync-meta {
@@ -451,8 +453,8 @@ body:has(.dw-app) {
     height: 36px;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 0 13px;
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
     border: 1px solid var(--dw-line);
     border-radius: 8px;
     background: var(--dw-surface);
@@ -461,7 +463,7 @@ body:has(.dw-app) {
     font-weight: 600;
     line-height: 1;
     white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(28, 28, 26, 0.03);
+    box-shadow: 0 1px 2px var(--dw-ink-03);
     cursor: pointer;
 }
 
@@ -473,23 +475,34 @@ body:has(.dw-app) {
 .dw-btn--dark {
     border-color: var(--dw-ink);
     background: var(--dw-ink);
-    color: #fff;
+    color: var(--dw-paper);
 }
 
 .dw-btn--dark:hover {
-    background: #30302d;
-    border-color: #30302d;
+    background: var(--dw-ink-raised);
+    border-color: var(--dw-ink-raised);
+}
+
+.dw-btn:active {
+    transform: translateY(1px);
+}
+
+.dw-btn--dark:active {
+    background: var(--dw-ink);
+    border-color: var(--dw-ink);
 }
 
 .dw-btn:disabled {
+    border-color: var(--dw-line);
+    background: var(--dw-surface-2);
+    color: var(--dw-ink-2);
     cursor: wait;
-    opacity: 0.7;
 }
 
 .dw-text-button {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-2xs);
     padding: 0;
     border: 0;
     background: transparent;
@@ -509,6 +522,10 @@ body:has(.dw-app) {
     transform: translateX(2px);
 }
 
+.dw-text-button:active svg {
+    transform: translateX(1px);
+}
+
 .dw-text-button:hover {
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -519,11 +536,11 @@ body:has(.dw-app) {
 @media (min-width: 901px) {
     .dw-toolbar {
         position: sticky;
-        top: 0;
+        top: var(--dw-sticky-top);
         z-index: 20;
         min-height: 64px;
-        margin: 0 -22px;
-        padding: 14px 22px;
+        margin: 0 calc(var(--space-lg) * -1);
+        padding: var(--space-md) var(--space-lg);
         border-bottom: 1px solid var(--dw-line-soft);
         background: var(--dw-surface);
     }
@@ -531,8 +548,8 @@ body:has(.dw-app) {
 
 @media (min-width: 901px) and (max-width: 1180px) {
     .dw-toolbar {
-        margin-inline: -18px;
-        padding-inline: 18px;
+        margin-inline: calc(var(--space-md) * -1);
+        padding-inline: var(--space-md);
     }
 }
 
@@ -541,10 +558,10 @@ body:has(.dw-app) {
 .dw-alert {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
-    padding: 10px 13px;
-    border: 1px solid #efd4d8;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm) var(--space-sm);
+    border: 1px solid var(--dw-alert-line);
     border-radius: 9px;
     background: var(--dw-danger-bg);
     color: var(--dw-danger);
@@ -575,15 +592,15 @@ body:has(.dw-app) {
     border: 1px solid var(--dw-line);
     border-radius: 11px;
     background: var(--dw-surface);
-    box-shadow: 0 1px 2px rgba(28, 28, 26, 0.025);
+    box-shadow: 0 1px 2px var(--dw-ink-025);
 }
 
 .dw-card__head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
 }
 
 .dw-card__title {
@@ -603,7 +620,7 @@ body:has(.dw-app) {
 
 .dw-card__link {
     margin-top: auto;
-    padding-top: 12px;
+    padding-top: var(--space-sm);
 }
 
 /* KPI row */
@@ -611,17 +628,17 @@ body:has(.dw-app) {
 .dw-kpis {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-    margin-top: 14px;
-    margin-bottom: 14px;
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-md);
 }
 
 .dw-kpi {
     min-height: 104px;
     flex-direction: row;
     align-items: flex-start;
-    gap: 12px;
-    padding: 15px 16px;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-md);
     transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms ease, box-shadow 200ms ease;
 }
 
@@ -645,7 +662,7 @@ body:has(.dw-app) {
 
 .dw-kpi__body {
     min-width: 0;
-    padding-top: 1px;
+    padding-top: 0;
 }
 
 .dw-kpi__label {
@@ -659,8 +676,8 @@ body:has(.dw-app) {
 .dw-kpi__value {
     display: flex;
     align-items: baseline;
-    gap: 3px;
-    margin-top: 5px;
+    gap: var(--space-2xs);
+    margin-top: var(--space-2xs);
     color: var(--dw-ink);
     font-family: "Inter", var(--font-display);
     font-size: 26px;
@@ -680,7 +697,7 @@ body:has(.dw-app) {
 }
 
 .dw-kpi__hint {
-    margin-top: 6px !important;
+    margin-top: var(--space-xs) !important;
     overflow: hidden;
     color: var(--dw-muted);
     font-size: 9.5px;
@@ -694,14 +711,14 @@ body:has(.dw-app) {
 .dw-grid {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 14px;
+    gap: var(--space-md);
     align-items: stretch;
 }
 
 .dw-volume {
     grid-column: span 7;
     min-height: 330px;
-    padding: 17px 18px 14px;
+    padding: var(--space-md) var(--space-md) var(--space-md);
 }
 
 .dw-rail {
@@ -709,32 +726,32 @@ body:has(.dw-app) {
     min-width: 0;
     grid-column: span 5;
     grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 14px;
+    gap: var(--space-md);
 }
 
 .dw-plan {
     grid-column: span 4;
-    padding: 15px 17px 13px;
+    padding: var(--space-md) var(--space-md) var(--space-sm);
 }
 
 .dw-runs-card {
     grid-column: span 4;
-    padding: 15px 17px 13px;
+    padding: var(--space-md) var(--space-md) var(--space-sm);
 }
 
 .dw-bests {
     grid-column: span 4;
-    padding: 15px 17px 13px;
+    padding: var(--space-md) var(--space-md) var(--space-sm);
 }
 
 .dw-recent {
     grid-column: span 7;
-    padding: 15px 17px 9px;
+    padding: var(--space-md) var(--space-md) var(--space-xs);
 }
 
 .dw-sessions {
     grid-column: span 5;
-    padding: 15px 17px 9px;
+    padding: var(--space-md) var(--space-md) var(--space-xs);
 }
 
 /* Chart variant switch */
@@ -742,15 +759,15 @@ body:has(.dw-app) {
 .dw-chart__switch {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    padding: 3px;
+    gap: 0;
+    padding: var(--space-2xs);
     border: 1px solid var(--dw-line);
     border-radius: 9px;
     background: var(--dw-surface-2);
 }
 
 .dw-chart__switch-item {
-    padding: 4px 10px;
+    padding: var(--space-2xs) var(--space-sm);
     border: 0;
     border-radius: 6px;
     background: transparent;
@@ -767,10 +784,14 @@ body:has(.dw-app) {
     color: var(--dw-ink-2);
 }
 
+.dw-chart__switch-item:active {
+    background: var(--dw-surface-3);
+}
+
 .dw-chart__switch-item.is-active {
     background: var(--dw-surface);
     color: var(--dw-ink);
-    box-shadow: 0 1px 2px rgba(28, 28, 26, 0.08);
+    box-shadow: 0 1px 2px var(--dw-ink-08);
 }
 
 /* Volume chart */
@@ -779,7 +800,7 @@ body:has(.dw-app) {
     display: flex;
     min-height: 0;
     flex: 1;
-    gap: 9px;
+    gap: var(--space-xs);
 }
 
 .dw-chart__y {
@@ -788,7 +809,7 @@ body:has(.dw-app) {
     flex: none;
     flex-direction: column;
     justify-content: space-between;
-    padding: 2px 0 21px;
+    padding: 0 0 20px;
     color: var(--dw-muted);
     font-size: 9px;
     font-variant-numeric: tabular-nums;
@@ -923,17 +944,17 @@ body:has(.dw-app) {
     display: flex;
     min-width: 126px;
     flex-direction: column;
-    gap: 3px;
-    padding: 9px 11px;
+    gap: var(--space-2xs);
+    padding: var(--space-xs) var(--space-sm);
     border-radius: 9px;
     background: var(--dw-ink);
-    color: #fff;
-    box-shadow: 0 16px 32px -16px rgba(28, 28, 26, 0.55), 0 2px 6px rgba(28, 28, 26, 0.14);
+    color: var(--dw-paper);
+    box-shadow: 0 16px 32px -16px var(--dw-ink-55), 0 2px 6px var(--dw-ink-14);
     pointer-events: none;
 }
 
 .dw-chart__tooltip-date {
-    color: #fff;
+    color: var(--dw-paper);
     font-size: 10.5px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -943,8 +964,8 @@ body:has(.dw-app) {
 .dw-chart__tooltip-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    color: rgba(255, 255, 255, 0.7);
+    gap: var(--space-xs);
+    color: var(--dw-on-ink-70);
     font-size: 9.5px;
     font-variant-numeric: tabular-nums;
     line-height: 1.3;
@@ -953,7 +974,7 @@ body:has(.dw-app) {
 .dw-chart__labels {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    padding-top: 8px;
+    padding-top: var(--space-xs);
     color: var(--dw-muted);
     font-size: 9px;
     line-height: 1.2;
@@ -970,22 +991,22 @@ body:has(.dw-app) {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 10px;
-    padding-top: 10px;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+    padding-top: var(--space-sm);
     border-top: 1px solid var(--dw-line-soft);
 }
 
 .dw-legend-items {
     display: inline-flex;
     align-items: center;
-    gap: 14px;
+    gap: var(--space-md);
 }
 
 .dw-legend-item {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-xs);
     color: var(--dw-ink-2);
     font-size: 10px;
     white-space: nowrap;
@@ -1009,11 +1030,11 @@ body:has(.dw-app) {
 }
 
 .dw-dot--muted {
-    background: #d8d4ca;
+    background: var(--dw-line-strong);
 }
 
 .dw-dot--on-dark {
-    background: rgba(255, 255, 255, 0.82);
+    background: var(--dw-on-ink-82);
 }
 
 .dw-legend-item .dw-legend-dash {
@@ -1023,7 +1044,7 @@ body:has(.dw-app) {
 .dw-chart__total {
     display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: var(--space-sm);
     color: var(--dw-muted);
     font-size: 10px;
     white-space: nowrap;
@@ -1046,7 +1067,7 @@ body:has(.dw-app) {
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    gap: 5px;
+    gap: var(--space-2xs);
     color: var(--dw-muted);
     font-size: 11px;
 }
@@ -1058,7 +1079,7 @@ body:has(.dw-app) {
 }
 
 .dw-empty .dw-text-button {
-    margin-top: 5px;
+    margin-top: var(--space-2xs);
 }
 
 /* Consistency ring */
@@ -1066,8 +1087,8 @@ body:has(.dw-app) {
 .dw-consistency {
     display: flex;
     align-items: stretch;
-    gap: 14px;
-    padding: 14px 16px;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-md);
 }
 
 .dw-consistency__body {
@@ -1075,7 +1096,7 @@ body:has(.dw-app) {
     min-height: 104px;
     flex: 1;
     align-items: center;
-    gap: 18px;
+    gap: var(--space-md);
 }
 
 /* Training calendar */
@@ -1083,20 +1104,20 @@ body:has(.dw-app) {
 .dw-calendar {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: var(--space-2xs);
 }
 
 .dw-calendar__row {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: var(--space-xs);
 }
 
 .dw-calendar__label {
     width: 34px;
     flex: none;
     color: var(--dw-muted);
-    font-size: 8.5px;
+    font-size: 9.5px;
     font-variant-numeric: tabular-nums;
     line-height: 1;
     white-space: nowrap;
@@ -1104,21 +1125,21 @@ body:has(.dw-app) {
 
 .dw-calendar__days {
     display: flex;
-    gap: 3px;
+    gap: var(--space-2xs);
 }
 
 .dw-calendar__day-label {
     width: 12px;
     flex: none;
     color: var(--dw-muted);
-    font-size: 7.5px;
+    font-size: 9px;
     font-weight: 500;
     line-height: 1;
     text-align: center;
 }
 
 .dw-calendar__row--head {
-    margin-bottom: 1px;
+    margin-bottom: 0;
 }
 
 .dw-calendar__day {
@@ -1126,7 +1147,7 @@ body:has(.dw-app) {
     width: 12px;
     height: 12px;
     border-radius: 3px;
-    background: #f0eee7;
+    background: var(--dw-cal-rest);
 }
 
 .dw-calendar__day.is-active {
@@ -1138,13 +1159,13 @@ body:has(.dw-app) {
     min-width: 0;
     flex: 1;
     flex-direction: column;
-    gap: 9px;
+    gap: var(--space-xs);
 }
 
 .dw-legend-row {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: var(--space-xs);
     color: var(--dw-ink-2);
     font-size: 10.5px;
     line-height: 1.2;
@@ -1176,7 +1197,7 @@ body:has(.dw-app) {
 /* Weekly share */
 
 .dw-share {
-    padding: 14px 16px;
+    padding: var(--space-md) var(--space-md);
 }
 
 .dw-share__body {
@@ -1185,14 +1206,14 @@ body:has(.dw-app) {
     flex: 1;
     flex-direction: column;
     justify-content: space-between;
-    gap: 7px;
+    gap: var(--space-xs);
 }
 
 .dw-share-row {
     display: grid;
     grid-template-columns: 58px minmax(0, 1fr) 46px 30px;
     align-items: center;
-    gap: 9px;
+    gap: var(--space-xs);
 }
 
 .dw-share-row__label {
@@ -1226,7 +1247,7 @@ body:has(.dw-app) {
 }
 
 .dw-share-row:hover .dw-share-row__fill {
-    background: #000;
+    background: var(--dw-ink);
 }
 
 .dw-share-row__avg {
@@ -1256,7 +1277,7 @@ body:has(.dw-app) {
 /* Plan card */
 
 .dw-plan__phase {
-    margin-top: 2px !important;
+    margin-top: 0 !important;
     color: var(--dw-muted);
     font-size: 9.5px;
 }
@@ -1265,7 +1286,7 @@ body:has(.dw-app) {
     display: inline-flex;
     min-height: 20px;
     align-items: center;
-    padding: 0 7px;
+    padding: 0 var(--space-xs);
     border-radius: 999px;
     background: var(--dw-surface-2);
     color: var(--dw-ink-2);
@@ -1288,9 +1309,9 @@ body:has(.dw-app) {
 .dw-plan__stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin: 13px 0 12px;
-    padding: 11px 0;
+    gap: var(--space-sm);
+    margin: var(--space-sm) 0 var(--space-sm);
+    padding: var(--space-sm) 0;
     border-top: 1px solid var(--dw-line-soft);
     border-bottom: 1px solid var(--dw-line-soft);
 }
@@ -1308,8 +1329,8 @@ body:has(.dw-app) {
 .dw-plan__stat-value {
     display: flex;
     align-items: baseline;
-    gap: 3px;
-    margin-top: 3px;
+    gap: var(--space-2xs);
+    margin-top: var(--space-2xs);
     color: var(--dw-ink);
     font-size: 15px;
     font-weight: 600;
@@ -1327,15 +1348,15 @@ body:has(.dw-app) {
 }
 
 .dw-progress {
-    margin-bottom: 2px;
+    margin-bottom: 0;
 }
 
 .dw-progress__label {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 5px;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-2xs);
     color: var(--dw-muted);
     font-size: 9px;
 }
@@ -1359,7 +1380,7 @@ body:has(.dw-app) {
     flex: 1;
     flex-direction: column;
     justify-content: center;
-    gap: 6px;
+    gap: var(--space-xs);
 }
 
 .dw-plan__empty strong {
@@ -1376,7 +1397,7 @@ body:has(.dw-app) {
 
 .dw-plan__empty .dw-btn {
     align-self: flex-start;
-    margin-top: 4px;
+    margin-top: var(--space-2xs);
 }
 
 /* Runs per week */
@@ -1387,8 +1408,8 @@ body:has(.dw-app) {
     flex: 1;
     align-items: stretch;
     justify-content: space-between;
-    gap: 16px;
-    padding-top: 4px;
+    gap: var(--space-md);
+    padding-top: var(--space-2xs);
 }
 
 .dw-runbar {
@@ -1397,7 +1418,7 @@ body:has(.dw-app) {
     flex: 1;
     flex-direction: column;
     align-items: center;
-    gap: 7px;
+    gap: var(--space-xs);
 }
 
 .dw-runbar__plot {
@@ -1459,18 +1480,18 @@ body:has(.dw-app) {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 9px 0;
+    gap: var(--space-sm);
+    padding: var(--space-xs) 0;
     border-top: 1px solid var(--dw-line-soft);
 }
 
 .dw-pb-row:first-child {
-    padding-top: 2px;
+    padding-top: 0;
     border-top: 0;
 }
 
 .dw-pb-row:last-child {
-    padding-bottom: 2px;
+    padding-bottom: 0;
 }
 
 .dw-pb__label {
@@ -1481,7 +1502,7 @@ body:has(.dw-app) {
 }
 
 .dw-pb__date {
-    margin-top: 2px !important;
+    margin-top: 0 !important;
     color: var(--dw-muted);
     font-size: 9px;
     line-height: 1.2;
@@ -1516,12 +1537,12 @@ body:has(.dw-app) {
 .dw-table__row {
     display: grid;
     grid-template-columns: minmax(150px, 1.65fr) 0.8fr 0.8fr 0.8fr 0.7fr;
-    gap: 12px;
+    gap: var(--space-sm);
     align-items: center;
 }
 
 .dw-table__head {
-    padding-bottom: 7px;
+    padding-bottom: var(--space-xs);
     border-bottom: 1px solid var(--dw-line);
     color: var(--dw-muted);
     font-size: 9px;
@@ -1530,7 +1551,7 @@ body:has(.dw-app) {
 
 .dw-table__row {
     min-height: 43px;
-    padding: 7px 0;
+    padding: var(--space-xs) 0;
     border-bottom: 1px solid var(--dw-line-soft);
 }
 
@@ -1542,7 +1563,7 @@ body:has(.dw-app) {
     display: flex;
     min-width: 0;
     align-items: center;
-    gap: 9px;
+    gap: var(--space-xs);
 }
 
 .dw-run__badge {
@@ -1564,7 +1585,7 @@ body:has(.dw-app) {
 .dw-table__row:hover .dw-run__badge {
     border-color: var(--dw-ink);
     background: var(--dw-ink);
-    color: #fff;
+    color: var(--dw-paper);
 }
 
 .dw-run__date {
@@ -1579,9 +1600,9 @@ body:has(.dw-app) {
 
 .dw-run__meta {
     overflow: hidden;
-    margin-top: 1px !important;
+    margin-top: 0 !important;
     color: var(--dw-muted);
-    font-size: 8.5px;
+    font-size: 9.5px;
     line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1602,7 +1623,7 @@ body:has(.dw-app) {
     display: inline-flex;
     min-height: 20px;
     align-items: center;
-    padding: 0 7px;
+    padding: 0 var(--space-xs);
     border-radius: 999px;
     background: var(--dw-surface-2);
     color: var(--dw-ink-2);
@@ -1623,20 +1644,20 @@ body:has(.dw-app) {
 }
 
 .dw-pill--gray {
-    background: #f1efe9;
-    color: #6d6a62;
+    background: var(--dw-pill-gray-bg);
+    color: var(--dw-pill-gray-ink);
 }
 
 .dw-table__foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--space-sm);
     margin-top: auto;
-    padding-top: 8px;
+    padding-top: var(--space-xs);
     border-top: 1px solid var(--dw-line);
     color: var(--dw-muted);
-    font-size: 8.5px;
+    font-size: 9.5px;
 }
 
 /* Upcoming sessions */
@@ -1653,8 +1674,8 @@ body:has(.dw-app) {
     min-height: 43px;
     grid-template-columns: 27px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 9px;
-    padding: 7px 0;
+    gap: var(--space-xs);
+    padding: var(--space-xs) 0;
     border-bottom: 1px solid var(--dw-line-soft);
 }
 
@@ -1677,7 +1698,7 @@ body:has(.dw-app) {
 .dw-session:hover .dw-session__icon {
     border-color: var(--dw-ink);
     background: var(--dw-ink);
-    color: #fff;
+    color: var(--dw-paper);
 }
 
 .dw-session__icon svg {
@@ -1702,9 +1723,9 @@ body:has(.dw-app) {
 
 .dw-session__meta {
     overflow: hidden;
-    margin-top: 1px !important;
+    margin-top: 0 !important;
     color: var(--dw-muted);
-    font-size: 8.5px;
+    font-size: 9.5px;
     line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1715,7 +1736,7 @@ body:has(.dw-app) {
     flex: 1;
     flex-direction: column;
     justify-content: center;
-    gap: 5px;
+    gap: var(--space-2xs);
     color: var(--dw-muted);
     font-size: 10.5px;
 }
@@ -1731,13 +1752,13 @@ body:has(.dw-app) {
 .dw-skeleton {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: var(--space-md);
 }
 
 .dw-skeleton__kpis {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: var(--space-md);
 }
 
 .dw-skeleton .dw-kpi__body {
@@ -1747,7 +1768,7 @@ body:has(.dw-app) {
 .dw-bone {
     display: block;
     border-radius: 4px;
-    background: #e7e4dd;
+    background: var(--dw-bone);
     animation: dw-pulse 1.6s ease-in-out infinite;
 }
 
@@ -1765,13 +1786,13 @@ body:has(.dw-app) {
 .dw-bone--value {
     width: 72%;
     height: 22px;
-    margin-top: 8px;
+    margin-top: var(--space-xs);
 }
 
 .dw-bone--hint {
     width: 48%;
     height: 8px;
-    margin-top: 8px;
+    margin-top: var(--space-xs);
 }
 
 .dw-bone--title {
@@ -1783,7 +1804,7 @@ body:has(.dw-app) {
     width: 100%;
     flex: 1;
     min-height: 210px;
-    margin-top: 24px;
+    margin-top: var(--space-lg);
 }
 
 .dw-bone--ring {
@@ -1795,12 +1816,12 @@ body:has(.dw-app) {
 .dw-bone--row {
     width: 100%;
     height: 32px;
-    margin-top: 8px;
+    margin-top: var(--space-xs);
 }
 
 .dw-skeleton__card {
     min-height: 170px;
-    padding: 16px;
+    padding: var(--space-md);
 }
 
 .dw-skeleton__card--volume {
@@ -1812,7 +1833,7 @@ body:has(.dw-app) {
     display: grid;
     grid-column: span 5;
     grid-template-rows: 1fr 1fr;
-    gap: 14px;
+    gap: var(--space-md);
 }
 
 @keyframes dw-pulse {
@@ -1828,16 +1849,16 @@ body:has(.dw-app) {
     }
 
     .dw-main {
-        padding: 0 18px 22px;
+        padding: 0 var(--space-md) var(--space-lg);
     }
 
     .dw-kpis,
     .dw-grid {
-        gap: 12px;
+        gap: var(--space-sm);
     }
 
     .dw-kpi {
-        padding: 14px;
+        padding: var(--space-md);
     }
 
     .dw-kpi__value {
@@ -1846,7 +1867,7 @@ body:has(.dw-app) {
 
     .dw-volume {
         min-height: 318px;
-        padding: 15px;
+        padding: var(--space-md);
     }
 
     .dw-plan,
@@ -1854,16 +1875,16 @@ body:has(.dw-app) {
     .dw-bests,
     .dw-recent,
     .dw-sessions {
-        padding-inline: 14px;
+        padding-inline: var(--space-md);
     }
 
     .dw-consistency,
     .dw-share {
-        padding-inline: 14px;
+        padding-inline: var(--space-md);
     }
 
     .dw-consistency__body {
-        gap: 12px;
+        gap: var(--space-sm);
     }
 
     .dw-calendar__day {
@@ -1873,7 +1894,7 @@ body:has(.dw-app) {
 
     .dw-share-row {
         grid-template-columns: 52px minmax(0, 1fr) 44px;
-        gap: 7px;
+        gap: var(--space-xs);
     }
 
     .dw-share-row__share {
@@ -1883,7 +1904,7 @@ body:has(.dw-app) {
     .dw-table__head,
     .dw-table__row {
         grid-template-columns: minmax(130px, 1.5fr) 0.75fr 0.75fr 0.75fr 0.65fr;
-        gap: 8px;
+        gap: var(--space-xs);
     }
 }
 
@@ -1911,7 +1932,7 @@ body:has(.dw-app) {
         z-index: 100;
         width: 278px;
         border-right: 1px solid var(--dw-line);
-        box-shadow: 12px 0 32px -18px rgba(28, 28, 26, 0.34);
+        box-shadow: 12px 0 32px -18px var(--dw-ink-34);
         transform: translateX(-102%);
         transition: transform 180ms ease;
     }
@@ -1930,7 +1951,7 @@ body:has(.dw-app) {
         z-index: 90;
         display: block;
         border: 0;
-        background: rgba(28, 28, 26, 0.34);
+        background: var(--dw-ink-34);
         cursor: pointer;
     }
 
@@ -1940,14 +1961,14 @@ body:has(.dw-app) {
 
     .dw-mobile-bar {
         position: sticky;
-        top: 0;
+        top: var(--dw-sticky-top);
         z-index: 80;
         display: flex;
         height: 56px;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        padding: 0 16px;
+        gap: var(--space-sm);
+        padding: 0 var(--space-md);
         border-bottom: 1px solid var(--dw-line);
         background: var(--dw-surface);
     }
@@ -1982,7 +2003,7 @@ body:has(.dw-app) {
 
     .dw-main {
         overflow: visible;
-        padding: 16px 16px 24px;
+        padding: var(--space-md) var(--space-md) var(--space-lg);
     }
 
     .dw-volume {
@@ -2034,7 +2055,7 @@ body:has(.dw-app) {
     .dw-pb-list {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
+        gap: var(--space-md);
     }
 
     .dw-pb-row,
@@ -2045,7 +2066,7 @@ body:has(.dw-app) {
     }
 
     .dw-pb-row + .dw-pb-row {
-        padding-left: 14px;
+        padding-left: var(--space-md);
         border-left: 1px solid var(--dw-line-soft);
     }
 
@@ -2064,19 +2085,19 @@ body:has(.dw-app) {
     .dw-toolbar {
         flex-wrap: wrap;
         align-items: center;
-        gap: 10px;
+        gap: var(--space-sm);
     }
 
     .dw-toolbar__context {
         flex: 1 1 100%;
-        gap: 5px;
+        gap: var(--space-2xs);
         padding-top: 0;
     }
 
     .dw-toolbar__actions {
         width: 100%;
         justify-content: flex-end;
-        gap: 9px;
+        gap: var(--space-xs);
     }
 
     .dw-sync-meta {
@@ -2085,7 +2106,7 @@ body:has(.dw-app) {
 
     .dw-kpi {
         min-height: 100px;
-        padding: 13px;
+        padding: var(--space-sm);
     }
 
     .dw-kpi__value {
@@ -2094,21 +2115,21 @@ body:has(.dw-app) {
 
     .dw-volume {
         min-height: 300px;
-        padding: 14px;
+        padding: var(--space-md);
     }
 
     .dw-chart {
-        gap: 6px;
+        gap: var(--space-xs);
     }
 
     .dw-chart__labels {
-        font-size: 8px;
+        font-size: 9px;
     }
 
     .dw-chart__foot {
         align-items: flex-start;
         flex-direction: column;
-        gap: 6px;
+        gap: var(--space-xs);
     }
 
     .dw-rail {
@@ -2129,12 +2150,12 @@ body:has(.dw-app) {
     .dw-pb-row,
     .dw-pb-row:first-child,
     .dw-pb-row:last-child {
-        padding: 9px 0;
+        padding: var(--space-xs) 0;
         border-top: 1px solid var(--dw-line-soft);
     }
 
     .dw-pb-row:first-child {
-        padding-top: 2px;
+        padding-top: 0;
         border-top: 0;
     }
 
@@ -2149,8 +2170,8 @@ body:has(.dw-app) {
 
     .dw-table__row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px 14px;
-        padding: 11px 0;
+        gap: var(--space-xs) var(--space-md);
+        padding: var(--space-sm) 0;
     }
 
     .dw-run__who {
@@ -2161,20 +2182,19 @@ body:has(.dw-app) {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
+        gap: var(--space-sm);
         font-size: 10px;
     }
 
     .dw-table__cell::before {
         content: attr(data-label);
         color: var(--dw-muted);
-        font-size: 8px;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+        font-size: 10px;
+        font-weight: 500;
     }
 
     .dw-table__foot {
-        margin-top: 6px;
+        margin-top: var(--space-xs);
     }
 
     .dw-skeleton__card--volume,
@@ -2193,16 +2213,16 @@ body:has(.dw-app) {
 
 @media (max-width: 430px) {
     .dw-main {
-        padding: 14px 12px 22px;
+        padding: var(--space-md) var(--space-sm) var(--space-lg);
     }
 
     .dw-kpis {
-        gap: 10px;
+        gap: var(--space-sm);
     }
 
     .dw-kpi {
         flex-direction: column;
-        gap: 9px;
+        gap: var(--space-xs);
     }
 
     .dw-kpi__hint {
@@ -2214,7 +2234,7 @@ body:has(.dw-app) {
     }
 
     .dw-btn {
-        padding-inline: 11px;
+        padding-inline: var(--space-sm);
     }
 }
 
