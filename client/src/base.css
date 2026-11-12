@@ -1,0 +1,78 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+html { scroll-padding-top: var(--space-3xl); }
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--color-board);
+  color: var(--color-board-type);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  caret-color: var(--color-accent);
+}
+body:has(.app) {
+  background: var(--color-desk);
+  color: var(--color-print);
+  scrollbar-color: var(--color-muted) var(--color-paper);
+}
+::selection { background: var(--color-accent); color: var(--color-accent-ink); }
+[hidden] { display: none !important; }
+
+/* Focus rings: bone on the ink shell, cobalt on the light bone surfaces. */
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.app :focus-visible { outline-color: var(--color-focus-ink); }
+.app-bar :focus-visible,
+.app-menu :focus-visible { outline-color: var(--color-focus-dark); }
+
+/* App-scoped type so the marketing page and the ink Plan shell keep their own. */
+.app a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.16em; }
+.app--paper h1,
+.app--paper h2,
+.app--paper h3 {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-synthesis: none;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.05;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+.app--paper h1 { max-width: 20ch; font-size: var(--text-display); }
+.app--paper h2 { max-width: 30ch; font-size: var(--text-section); }
+.app--paper h3 { max-width: 40ch; font-size: var(--text-title); line-height: 1.2; }
+.app--paper p { margin: 0; text-wrap: pretty; }
+.app--paper p:not([class]) { max-width: 65ch; }
+.app img,
+.app video { display: block; max-width: 100%; height: auto; }
+.app svg { display: block; }
+.app button,
+.app input,
+.app select,
+.app textarea { font: inherit; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+[data-slot] { position: relative; overflow: hidden; background: var(--color-paper-2); }
+
+@media (max-width: 60rem) { :root { --gutter: 24px; --section-gap-s: 80px; --section-gap: 96px; --section-gap-l: 120px; } }
+@media (max-width: 40rem) { :root { --gutter: 16px; --section-gap-s: 56px; --section-gap: 72px; --section-gap-l: 96px; --gap-columns: 16px; } }
+@media (prefers-reduced-motion: reduce) {
+  *:not(.keep-motion),
+  *:not(.keep-motion)::before,
+  *:not(.keep-motion)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
