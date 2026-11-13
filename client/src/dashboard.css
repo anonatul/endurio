@@ -10,6 +10,17 @@
 @import '@fontsource/inter/latin-500.css';
 @import '@fontsource/inter/latin-600.css';
 
+:root {
+    --dw-tag-blue: #a9cbf7;
+    --dw-tag-blue-ink: #182740;
+    --dw-tag-green: #187a3e;
+    --dw-tag-grey: #d9d9d9;
+    --dw-tag-grey-ink: #1c1c1a;
+    --dw-tag-pink: #e60c54;
+    --dw-tag-purple: #6c2bd9;
+    --dw-tag-white: #ffffff;
+}
+
 /* Dashboard visual layer — scoped to the dashboard only. */
 
 body:has(.dw-app) {
@@ -1289,21 +1300,28 @@ body:has(.dw-app) {
     padding: 0 var(--space-xs);
     border-radius: 999px;
     background: var(--dw-surface-2);
-    color: var(--dw-ink-2);
+    color: var(--dw-ink);
     font-size: 9px;
-    font-weight: 500;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     line-height: 1;
+    text-transform: uppercase;
     white-space: nowrap;
 }
 
-.dw-tag--green {
-    background: var(--dw-green-bg);
-    color: var(--dw-green);
+.dw-tag--blue {
+    background: var(--dw-tag-blue);
+    color: var(--dw-tag-blue-ink);
 }
 
-.dw-tag--orange {
-    background: var(--dw-orange-bg);
-    color: var(--dw-orange);
+.dw-tag--green {
+    background: var(--dw-tag-green);
+    color: var(--dw-tag-white);
+}
+
+.dw-tag--grey {
+    background: var(--dw-tag-grey);
+    color: var(--dw-tag-grey-ink);
 }
 
 .dw-plan__stats {
@@ -1626,26 +1644,39 @@ body:has(.dw-app) {
     padding: 0 var(--space-xs);
     border-radius: 999px;
     background: var(--dw-surface-2);
-    color: var(--dw-ink-2);
+    color: var(--dw-ink);
     font-size: 9px;
-    font-weight: 500;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     line-height: 1;
+    text-transform: uppercase;
     white-space: nowrap;
 }
 
+.dw-pill--blue {
+    background: var(--dw-tag-blue);
+    color: var(--dw-tag-blue-ink);
+}
+
 .dw-pill--green {
-    background: var(--dw-green-bg);
-    color: var(--dw-green);
+    background: var(--dw-tag-green);
+    color: var(--dw-tag-white);
 }
 
-.dw-pill--orange {
-    background: var(--dw-orange-bg);
-    color: var(--dw-orange);
-}
-
+.dw-pill--grey,
 .dw-pill--gray {
-    background: var(--dw-pill-gray-bg);
-    color: var(--dw-pill-gray-ink);
+    background: var(--dw-tag-grey);
+    color: var(--dw-tag-grey-ink);
+}
+
+.dw-pill--pink {
+    background: var(--dw-tag-pink);
+    color: var(--dw-tag-white);
+}
+
+.dw-pill--purple {
+    background: var(--dw-tag-purple);
+    color: var(--dw-tag-white);
 }
 
 .dw-table__foot {

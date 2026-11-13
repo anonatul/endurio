@@ -150,14 +150,21 @@ const runTypeLabel = (value) => {
     return "Run";
 };
 
+const runTypeTone = (value) => {
+    if (Number(value) === 1) return "purple";
+    if (Number(value) === 2) return "blue";
+    if (Number(value) === 3) return "pink";
+    return "grey";
+};
+
 const sessionState = (date, today) => {
     const daysUntil = Math.round(
         (Date.parse(`${dayKey(date)}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / DAY_MS
     );
 
     if (daysUntil <= 0) return { label: "Today", tone: "green" };
-    if (daysUntil <= 7) return { label: "This week", tone: "orange" };
-    return { label: "Scheduled", tone: "gray" };
+    if (daysUntil <= 7) return { label: "This week", tone: "blue" };
+    return { label: "Scheduled", tone: "grey" };
 };
 
 export default function Dashboard() {
@@ -1030,8 +1037,8 @@ const PlanCard = ({
     const tagTone = planPhase === "active"
         ? " dw-tag--green"
         : planPhase === "upcoming"
-            ? " dw-tag--orange"
-            : "";
+            ? " dw-tag--blue"
+            : " dw-tag--grey";
 
     return (
         <section className="dw-card dw-plan" aria-labelledby="plan-title">
@@ -1220,7 +1227,9 @@ const RunsTable = ({ runs, totalRuns }) => (
                             </div>
                         </div>
                         <div className="dw-table__cell" role="cell" data-label="Type">
-                            <span className="dw-pill">{runTypeLabel(run.workout_type)}</span>
+                            <span className={`dw-pill dw-pill--${runTypeTone(run.workout_type)}`}>
+                                {runTypeLabel(run.workout_type)}
+                            </span>
                         </div>
                         <div className="dw-table__cell" role="cell" data-label="Distance">
                             {formatKm(run.distance)}

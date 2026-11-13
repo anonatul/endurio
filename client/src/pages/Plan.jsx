@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarRange, Loader2, X } from "lucide-react";
+import { CalendarRange, ChevronRight, Loader2, X } from "lucide-react";
 
 import { DashboardShell } from "../components/dashboard/DashboardShell";
 import "../plan.css";
@@ -27,6 +27,49 @@ const formatWeekRange = (weekRange) => {
     });
 
     return formatter.formatRange(new Date(weekRange.start_date), new Date(weekRange.end_date));
+};
+
+const formatKm = (value) => {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) return null;
+
+    return Number.isInteger(number) ? String(number) : String(number);
+};
+
+const formatDuration = (minutes) => {
+    const number = Number(minutes);
+
+    if (!Number.isFinite(number) || number <= 0) return null;
+    if (number < 60) return `${Math.round(number)} min`;
+
+    const hours = Math.floor(number / 60);
+    const rest = Math.round(number % 60);
+
+    return rest > 0 ? `${hours} h ${rest}` : `${hours} h`;
+};
+
+const phaseLabel = (name) => String(name ?? "").split("&")[0].trim();
+
+const humanize = (key) => key.replaceAll("_", " ");
+
+/* One intensity vocabulary for the plan, read the way a coach calls a session. */
+const zoneInfo = (zone) => {
+    if (!zone) return null;
+
+    const value = String(zone).toLowerCase();
+
+    if (value === "rest") return null;
+    if (value.includes("recovery")) return { label: "Recovery", tone: "recovery" };
+    if (value.includes("easy")) return { label: "Easy", tone: "easy" };
+    if (value.includes("steady") || value.includes("aerobic")) return { label: "Steady", tone: "steady" };
+    if (value.includes("tempo") || value.includes("threshold")) return { label: "Tempo", tone: "quality" };
+    if (value.includes("interval") || value.includes("repetition") || value.includes("stride")) {
+        return { label: "Intervals", tone: "quality" };
+    }
+    if (value.includes("race")) return { label: "Race", tone: "race" };
+
+    return { label: humanize(value), tone: "steady" };
 };
 
 const useDialogFocus = (panelRef, onClose) => {
@@ -167,10 +210,16 @@ function Plan() {
         : weekSummary.recovery_notes ?? weekSummary.notes;
 
     const weekMetrics = [
-        { label: "Distance", value: week?.target_distance_km, unit: "km" },
-        { label: "Time", value: weekSummary.total_duration_minutes, unit: "min" },
+        {
+            label: "Distance",
+            value: week?.target_distance_km !== undefined && week?.target_distance_km !== null
+                ? formatKm(week.target_distance_km)
+                : null,
+            unit: "km"
+        },
+        { label: "Time", value: formatDuration(weekSummary.total_duration_minutes), unit: null },
         { label: "Sessions", value: week?.training_days, unit: null }
-    ].filter(({ value }) => value !== undefined && value !== null);
+    ].filter(({ value }) => value !== undefined && value !== null && value !== "");
 
     const firstWeekStart = weeks[0]?.week_range?.start_date;
     const lastWeekEnd = weeks[weeks.length - 1]?.week_range?.end_date;
@@ -183,26 +232,6 @@ function Plan() {
     });
 
     const currentWeekNumber = weekIndex >= 0 ? weekIndex + 1 : 1;
-
-    const targets = weeks.map((item) => Number(item.target_distance_km ?? 0));
-    const peakTarget = Math.max(...targets, 1);
-    const floorTarget = Math.min(...targets);
-    const loadRange = peakTarget - floorTarget > 0 ? peakTarget - floorTarget : 1;
-    /* The rail is the plan's volume profile: one point per week, phases marked. */
-    const loadPoints = weeks.map((item, index) => ({
-        x: index * RAIL_CELL + RAIL_CELL / 2,
-        y: RAIL_BASE
-            - ((Number(item.target_distance_km ?? 0) - floorTarget) / loadRange) * (RAIL_BASE - RAIL_TOP)
-    }));
-    const loadLine = loadPoints
-        .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-        .join(" ");
-    const loadArea = loadPoints.length
-        ? `${loadLine} L ${loadPoints[loadPoints.length - 1].x} ${RAIL_BASE} L ${loadPoints[0].x} ${RAIL_BASE} Z`
-        : "";
-    const phaseEdges = weeks
-        .map((item, index) => (index > 0 && item.phase !== weeks[index - 1].phase ? index : null))
-        .filter((value) => value !== null);
 
     const planPhase = !firstWeekStart
         ? "active"
@@ -218,15 +247,42 @@ function Plan() {
         ))
         : 0;
 
-    const planStatusLine = [
+    const weeklyRuns = weeks.length > 0 && weeks.every((item) => item.training_days === weeks[0].training_days)
+        ? weeks[0].training_days
+        : null;
+
+    const planMeta = [
         planPhase === "upcoming" && firstWeekStart
             ? `Starts ${formatDate(firstWeekStart)}`
-            : planPhase === "complete"
+            : planPhase === "complete" && lastWeekEnd
                 ? `Ended ${formatDate(lastWeekEnd)}`
-                : `Week ${currentWeekNumber} of ${weeks.length}`,
+                : weeks.length
+                    ? `Week ${currentWeekNumber} of ${weeks.length}`
+                    : null,
+        planPhase === "upcoming" && weeks.length ? `${weeks.length} weeks` : null,
+        weeklyRuns ? `${weeklyRuns} runs a week` : null,
         plan?.goal,
         plan?.race_date ? `Race ${formatDate(plan.race_date)}` : null
-    ].filter(Boolean).join(" · ");
+    ].filter(Boolean);
+
+    const planTag = planPhase === "upcoming"
+        ? { label: "Upcoming", tone: "blue" }
+        : planPhase === "complete"
+            ? { label: "Complete", tone: "grey" }
+            : { label: "In progress", tone: "green" };
+
+    const phaseRuns = weeks.reduce((runs, item, index) => {
+        const name = item.phase || "Training";
+        const last = runs[runs.length - 1];
+
+        if (last && last.name === name) {
+            last.span += 1;
+        } else {
+            runs.push({ name, short: phaseLabel(name), start: index, span: 1 });
+        }
+
+        return runs;
+    }, []);
 
     const regenerateLabel = planPhase === "upcoming"
         ? "Replace plan"
@@ -261,250 +317,251 @@ function Plan() {
     return (
         <DashboardShell>
             <main className={`plan-page no-scrollbar flex-1 ${selectedDay || dialogOpen ? "overflow-hidden" : "overflow-auto"}`}>
-                <div className="app-container p-8">
-                <header className="plan-header mb-8">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight">Training Plan</h1>
-                            <p className="plan-subtitle mt-1 text-sm text-white/40">{planStatusLine}</p>
+                <div className="plan-wrap">
+                    <header className="plan-head">
+                        <div className="plan-head__copy">
+                            <h1>Training plan</h1>
+                            <p className="plan-head__meta">
+                                {!loading && !error && plan && (
+                                    <span className={`plan-tag plan-tag--${planTag.tone}`}>{planTag.label}</span>
+                                )}
+                                {planMeta.map((item, index) => (
+                                    <span key={item} className="plan-head__meta-item">
+                                        {index > 0 && <span className="plan-head__sep" aria-hidden="true">·</span>}
+                                        {item}
+                                    </span>
+                                ))}
+                            </p>
                         </div>
 
                         {!loading && !error && plan && (
                             generating ? (
-                                <span className="plan-generating inline-flex items-center gap-2 border border-white/[0.12] px-3 py-1.5 text-xs text-white/50">
-                                    <Loader2 className="plan-spinner h-3.5 w-3.5" />
+                                <span className="plan-tag plan-tag--grey plan-tag--progress">
+                                    <Loader2 className="plan-spin" aria-hidden="true" />
                                     Building your plan…
                                 </span>
                             ) : (
                                 <button
                                     onClick={() => setDialogOpen(true)}
-                                    className={`plan-header__action cursor-pointer border px-3 py-1.5 text-xs transition-colors duration-150 plan-focus ${
-                                        planPhase === "active"
-                                            ? "plan-regenerate-active"
-                                            : "plan-regenerate"
-                                    }`}
+                                    className="plan-btn plan-btn--dark"
                                 >
                                     {regenerateLabel}
                                 </button>
                             )
                         )}
-                    </div>
+                    </header>
 
                     {generateError && plan && (
-                        <p role="alert" className="mt-3 text-xs text-white/60">{generateError}</p>
+                        <p role="alert" className="plan-alert">{generateError}</p>
                     )}
-                </header>
 
-                {loading && (
-                    <div className="plan-loading">
-                        <div className="flex gap-1 border-b border-white/[0.08] pb-3">
-                            {Array.from({ length: 12 }).map((_, index) => (
-                                <div key={index} className="h-9 w-11 bg-white/[0.05]" />
-                            ))}
-                        </div>
-
-                        <div className="mt-6 flex flex-wrap items-end justify-between gap-6">
-                            <div className="space-y-2">
-                                <div className="h-2.5 w-20 bg-white/[0.05]" />
-                                <div className="h-5 w-24 bg-white/[0.05]" />
-                                <div className="h-3 w-28 bg-white/[0.05]" />
-                            </div>
-                            <div className="flex gap-6">
-                                {[0, 1, 2].map((index) => (
-                                    <div key={index} className="space-y-2">
-                                        <div className="h-5 w-14 bg-white/[0.05]" />
-                                        <div className="h-2.5 w-16 bg-white/[0.05]" />
-                                    </div>
+                    {loading && (
+                        <div className="plan-loading" aria-hidden="true">
+                            <div className="plan-skeleton__rail">
+                                {Array.from({ length: 12 }).map((_, index) => (
+                                    <span key={index} className="plan-skel plan-skel--week" />
                                 ))}
                             </div>
-                        </div>
 
-                        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                            {Array.from({ length: 4 }).map((_, index) => (
-                                <div key={index} className="plan-skeleton h-40 border border-white/[0.06]" />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {!loading && error && (
-                    <section className="plan-state plan-state--error border border-white/[0.08] p-8">
-                        <p className="text-sm font-medium">Could not load your plan</p>
-                        <p className="mt-1 text-sm text-white/40">{error}</p>
-                    </section>
-                )}
-
-                {!loading && !error && !plan && (
-                    <section className="plan-state plan-state--empty border border-white/[0.08] p-12 text-center">
-                        <CalendarRange className="mx-auto h-6 w-6 text-white/30" />
-                        <h2 className="mt-4 text-lg font-bold">No active plan</h2>
-                        <p className="mx-auto mt-2 max-w-md text-sm text-white/40">
-                            Generate one and it will be built around your goal, your weekly schedule
-                            and your recent running.
-                        </p>
-                        <button
-                            onClick={handleGenerate}
-                            disabled={generating}
-                            className="mt-6 inline-flex cursor-pointer items-center gap-2 border border-white bg-white px-5 py-2.5 text-sm font-semibold text-black transition disabled:cursor-wait disabled:opacity-60"
-                        >
-                            {generating ? (
-                                <>
-                                    <Loader2 className="plan-spinner h-4 w-4" />
-                                    Building your plan…
-                                </>
-                            ) : (
-                                "Generate plan"
-                            )}
-                        </button>
-
-                        {generating && (
-                            <span className="mx-auto mt-4 block h-px w-48 overflow-hidden bg-white/10">
-                                <span className="loading-bar plan-accent-bar block h-px w-1/3" />
-                            </span>
-                        )}
-
-                        {generateError ? (
-                            <p role="alert" className="mt-3 text-xs text-white/60">{generateError}</p>
-                        ) : (
-                            <p className="mt-3 text-[11px] text-white/25">Takes about a minute. Keep this tab open.</p>
-                        )}
-                    </section>
-                )}
-
-                {!loading && !error && week && (
-                    <>
-                        <div className="no-scrollbar overflow-x-auto">
-                            <p className="plan-rail-caption">
-                                Weekly load {weeks.length > 0 ? `· ${floorTarget}–${peakTarget} km` : ""}
-                            </p>
-                            <div className="plan-rail-figure" aria-hidden="true">
-                                <svg width={weeks.length * RAIL_CELL} height="72" viewBox={`0 0 ${weeks.length * RAIL_CELL} 72`}>
-                                    {phaseEdges.map((edge) => (
-                                        <line
-                                            key={edge}
-                                            x1={edge * RAIL_CELL}
-                                            x2={edge * RAIL_CELL}
-                                            y1="8"
-                                            y2="64"
-                                            className="plan-rail-phase-edge"
-                                        />
-                                    ))}
-                                    <path d={loadArea} className="plan-rail-area" />
-                                    <path d={loadLine} className="plan-rail-line" />
-                                    {loadPoints.map((point, index) => (
-                                        <circle
-                                            key={weeks[index].week_number ?? index}
-                                            cx={point.x}
-                                            cy={point.y}
-                                            r={index === activeWeek ? 3.5 : 2}
-                                            className={`plan-rail-dot${index === activeWeek ? " is-active" : ""}`}
-                                        />
-                                    ))}
-                                </svg>
-                            </div>
-                            <div
-                                role="tablist"
-                                aria-label="Training weeks"
-                                onKeyDown={handleRailKeyDown}
-                                className="plan-week-rail flex w-max min-w-full gap-1 border-b border-white/[0.08]"
-                            >
-                                {weeks.map((weekItem, index) => {
-                                    const isActive = index === activeWeek;
-                                    const isCurrent = index === weekIndex;
-                                    const endDate = weekItem.week_range?.end_date;
-                                    const isPast = Boolean(endDate) && endDate < todayKey;
-                                    const weekNumber = String(weekItem.week_number ?? index + 1).padStart(2, "0");
-
-                                    return (
-                                        <button
-                                            key={weekItem.week_number ?? index}
-                                            id={`week-tab-${index}`}
-                                            ref={(element) => {
-                                                tabRefs.current[index] = element;
-                                            }}
-                                            role="tab"
-                                            aria-selected={isActive}
-                                            aria-controls="week-panel"
-                                            tabIndex={isActive ? 0 : -1}
-                                            onClick={() => {
-                                                setActiveWeek(index);
-                                                setSelectedDay(null);
-                                                setPanelClosing(false);
-                                            }}
-                                            className="group relative shrink-0 cursor-pointer px-4 pb-3 pt-1 text-left plan-focus"
-                                        >
-                                            <span className={`relative block text-lg font-medium tabular-nums transition-colors duration-150 ${
-                                                isActive || isCurrent
-                                                    ? "text-white"
-                                                    : isPast
-                                                        ? "text-white/25"
-                                                        : "text-white/40"
-                                            } ${!isActive && !isCurrent ? "group-hover:text-white/70" : ""}`}>
-                                                {weekNumber}
-                                                {isCurrent && (
-                                                    <span className="plan-current-marker absolute -right-2 top-1" aria-hidden="true" />
-                                                )}
-                                            </span>
-                                            {isCurrent && <span className="sr-only">current week</span>}
-                                            {isActive ? (
-                                                <span className="rail-line plan-accent-line absolute inset-x-0 -bottom-px h-px" />
-                                            ) : (
-                                                <span className="absolute inset-x-0 -bottom-px h-px bg-white/20 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div
-                            key={activeWeek}
-                            id="week-panel"
-                            role="tabpanel"
-                            aria-labelledby={`week-tab-${activeWeek}`}
-                            className="plan-panel week-in"
-                        >
-                            <div className="plan-week-summary mt-6 border-b border-white/[0.06] pb-5">
-                                <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-                                    <div className="plan-week-heading">
-                                        <p className="plan-week-label text-[10px] text-white/30">
-                                            Week {String(week.week_number ?? activeWeek + 1).padStart(2, "0")}
-                                        </p>
-                                        {week.phase && <p className="mt-1.5 text-lg font-medium">{week.phase}</p>}
-                                        <p className="mt-1 text-xs text-white/40">
-                                            {formatWeekRange(week.week_range)}
-                                        </p>
+                            <div className="plan-sheet plan-sheet--skeleton">
+                                <div className="plan-skeleton__head">
+                                    <div className="plan-skeleton__copy">
+                                        <span className="plan-skel plan-skel--label" />
+                                        <span className="plan-skel plan-skel--title" />
                                     </div>
-
-                                    <div className="plan-week-metrics flex items-end">
-                                        {weekMetrics.map(({ label, value, unit }, index) => (
-                                            <div key={label} className={index > 0 ? "border-l border-white/[0.08] pl-6 ml-6" : ""}>
-                                                <p className="text-xl font-medium leading-none tabular-nums">
-                                                    {value}
-                                                    {unit && <span className="ml-1 text-[11px] font-normal text-white/40">{unit}</span>}
-                                                </p>
-                                                <p className="mt-1.5 text-[10px] text-white/30">{label}</p>
-                                            </div>
+                                    <div className="plan-skeleton__stats">
+                                        {[0, 1, 2].map((index) => (
+                                            <span key={index} className="plan-skel plan-skel--stat" />
                                         ))}
                                     </div>
                                 </div>
 
-                                {weekNotes && <p className="plan-week-note mt-4 max-w-2xl text-xs leading-relaxed text-white/35">{weekNotes}</p>}
-                            </div>
-
-                            <div className="plan-session-grid mt-6 grid items-start grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                {(week.days || []).map((day) => (
-                                    <DayCard
-                                        key={day.date}
-                                        day={day}
-                                        isToday={day.date === todayKey}
-                                        onSelect={(element) => openSession(day, element)}
-                                    />
-                                ))}
+                                <div className="plan-skeleton__rows">
+                                    {[0, 1, 2, 3, 4].map((index) => (
+                                        <div key={index} className="plan-skeleton__row">
+                                            <span className="plan-skel plan-skel--day" />
+                                            <span className="plan-skel plan-skel--what" />
+                                            <span className="plan-skel plan-skel--number" />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </>
-                )}
+                    )}
+
+                    {!loading && error && (
+                        <section className="plan-state plan-state--error">
+                            <p className="plan-state__title">Could not load your plan</p>
+                            <p>{error}</p>
+                        </section>
+                    )}
+
+                    {!loading && !error && !plan && (
+                        <section className="plan-state">
+                            <CalendarRange className="plan-state__icon" aria-hidden="true" />
+                            <h2>No active plan</h2>
+                            <p>
+                                Generate one and it will be built around your goal, your weekly schedule
+                                and your recent running.
+                            </p>
+                            <button
+                                onClick={handleGenerate}
+                                disabled={generating}
+                                className="plan-btn plan-btn--dark"
+                            >
+                                {generating ? (
+                                    <>
+                                        <Loader2 className="plan-spin" aria-hidden="true" />
+                                        Building your plan…
+                                    </>
+                                ) : (
+                                    "Generate plan"
+                                )}
+                            </button>
+
+                            {generating && (
+                                <span className="plan-progress" aria-hidden="true">
+                                    <span />
+                                </span>
+                            )}
+
+                            {generateError ? (
+                                <p role="alert" className="plan-alert">{generateError}</p>
+                            ) : (
+                                <p className="plan-state__hint">Takes about a minute. Keep this tab open.</p>
+                            )}
+                        </section>
+                    )}
+
+                    {!loading && !error && week && (
+                        <>
+                            <div className="plan-weeks">
+                                <div className="plan-weeks__scroll">
+                                    <div
+                                        className="plan-weeks__inner"
+                                        style={{ "--plan-week-count": weeks.length }}
+                                    >
+                                        <div className="plan-phaseband" aria-hidden="true">
+                                            {phaseRuns.map((run) => (
+                                                <span
+                                                    key={`${run.name}-${run.start}`}
+                                                    className="plan-phaseband__item"
+                                                    style={{ gridColumn: `${run.start + 1} / span ${run.span}` }}
+                                                    title={run.name}
+                                                >
+                                                    {run.short}
+                                                </span>
+                                            ))}
+                                        </div>
+
+                                        <div
+                                            role="tablist"
+                                            aria-label="Training weeks"
+                                            onKeyDown={handleRailKeyDown}
+                                            className="plan-rail"
+                                        >
+                                            {weeks.map((weekItem, index) => {
+                                                const isActive = index === activeWeek;
+                                                const isCurrent = index === weekIndex;
+                                                const endDate = weekItem.week_range?.end_date;
+                                                const isPast = Boolean(endDate) && endDate < todayKey;
+                                                const weekNumber = String(weekItem.week_number ?? index + 1).padStart(2, "0");
+
+                                                return (
+                                                    <button
+                                                        key={weekItem.week_number ?? index}
+                                                        id={`week-tab-${index}`}
+                                                        ref={(element) => {
+                                                            tabRefs.current[index] = element;
+                                                        }}
+                                                        role="tab"
+                                                        aria-selected={isActive}
+                                                        aria-controls="week-panel"
+                                                        tabIndex={isActive ? 0 : -1}
+                                                        onClick={() => {
+                                                            setActiveWeek(index);
+                                                            setSelectedDay(null);
+                                                            setPanelClosing(false);
+                                                        }}
+                                                        className={`plan-week${isActive ? " is-active" : ""}${isPast ? " is-past" : ""}`}
+                                                    >
+                                                        <span className="plan-week__no">
+                                                            {weekNumber}
+                                                            {isCurrent && <span className="plan-week__now" aria-hidden="true" />}
+                                                        </span>
+                                                        <span className="plan-week__km">
+                                                            {weekItem.target_distance_km !== undefined && weekItem.target_distance_km !== null
+                                                                ? `${formatKm(weekItem.target_distance_km)} km`
+                                                                : "—"}
+                                                        </span>
+                                                        {isCurrent && <span className="sr-only">current week</span>}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <section
+                                key={activeWeek}
+                                id="week-panel"
+                                role="tabpanel"
+                                aria-labelledby={`week-tab-${activeWeek}`}
+                                className="plan-sheet week-in"
+                            >
+                                <header className="plan-sheet__head">
+                                    <div className="plan-sheet__identity">
+                                        <p className="plan-sheet__eyebrow">
+                                            <span>Week {String(week.week_number ?? activeWeek + 1).padStart(2, "0")}</span>
+                                            <span aria-hidden="true">·</span>
+                                            <span>{formatWeekRange(week.week_range)}</span>
+                                        </p>
+                                        <h2 className="plan-sheet__title">
+                                            {week.phase || "Training week"}
+                                        </h2>
+                                    </div>
+
+                                    <dl className="plan-sheet__stats">
+                                        {weekMetrics.map(({ label, value, unit }) => (
+                                            <div key={label} className="plan-sheet__stat">
+                                                <dt>{label}</dt>
+                                                <dd>
+                                                    {value}
+                                                    {unit && <span>{unit}</span>}
+                                                </dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                </header>
+
+                                {weekNotes && <p className="plan-sheet__note">{weekNotes}</p>}
+
+                                <div className="plan-days">
+                                    <div className="plan-days__head" aria-hidden="true">
+                                        <span>Day</span>
+                                        <span>Session</span>
+                                        <span>Zone</span>
+                                        <span>Time</span>
+                                        <span>Pace</span>
+                                        <span className="plan-days__dist">Distance</span>
+                                        <span />
+                                    </div>
+
+                                    <ol className="plan-days__list">
+                                        {(week.days || []).map((day) => (
+                                            <DayRow
+                                                key={day.date}
+                                                day={day}
+                                                isToday={day.date === todayKey}
+                                                onSelect={(element) => openSession(day, element)}
+                                            />
+                                        ))}
+                                    </ol>
+                                </div>
+                            </section>
+                        </>
+                    )}
                 </div>
             </main>
 
@@ -526,7 +583,17 @@ function Plan() {
     );
 };
 
-const DayCard = ({ day, isToday, onSelect }) => {
+const DayRow = ({ day, isToday, onSelect }) => {
+    const isRest = Boolean(day.rest);
+    const zone = zoneInfo(day.intensity_zone);
+    const parsed = day.main_set ? parseMainSet(day.main_set) : null;
+    const subline = parsed?.headline || day.description || day.notes;
+    const distance = !isRest && day.distance_km !== undefined && day.distance_km !== null
+        ? formatKm(day.distance_km)
+        : null;
+    const duration = !isRest ? formatDuration(day.duration_minutes) : null;
+    const pace = !isRest ? day.pace_readable : null;
+
     const handleKeyDown = (event) => {
         if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -534,106 +601,70 @@ const DayCard = ({ day, isToday, onSelect }) => {
         }
     };
 
-    if (day.rest) {
-        return (
-            <article
-                className={`plan-session plan-session--rest flex flex-col p-4 ${isToday ? "is-today" : ""}`}
-            >
-                <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-[11px] text-white/40">{day.day}</p>
-                    <p className="text-[11px] text-white/25">{formatDate(day.date)}</p>
+    const content = (
+        <>
+            <span className="plan-day__when">
+                <span className="plan-day__dow">{day.day ? day.day.slice(0, 3) : "—"}</span>
+                <span className="plan-day__date">{formatDate(day.date)}</span>
+                {isToday && <span className="plan-day__today">Today</span>}
+            </span>
+
+            <span className="plan-day__what">
+                <span className="plan-day__type">{day.workout_type}</span>
+                {subline && <span className="plan-day__sub">{subline}</span>}
+                {!isRest && (
+                    <span className="plan-day__compact">
+                        {duration && <span>{duration}</span>}
+                        {pace && <><span className="plan-day__sep" aria-hidden="true">·</span><span>{pace}</span></>}
+                        {zone && (
+                            <>
+                                <span className="plan-day__sep" aria-hidden="true">·</span>
+                                <span className={`plan-day__compact-zone plan-zone plan-zone--${zone.tone}`}>
+                                    {zone.label}
+                                </span>
+                            </>
+                        )}
+                    </span>
+                )}
+            </span>
+
+            <span className="plan-day__zone">
+                {zone ? (
+                    <span className={`plan-zone plan-zone--${zone.tone}`}>
+                        {zone.label}
+                    </span>
+                ) : "—"}
+            </span>
+
+            <span className="plan-day__time">{duration || "—"}</span>
+            <span className="plan-day__pace">{pace || "—"}</span>
+            <span className="plan-day__dist">
+                {distance !== null ? <>{distance}<em>km</em></> : "—"}
+            </span>
+            <span className="plan-day__arrow">
+                {!isRest && <ChevronRight aria-hidden="true" />}
+            </span>
+        </>
+    );
+
+    return (
+        <li className="plan-day-item">
+            {isRest ? (
+                <div className="plan-day plan-day--rest">
+                    {content}
                 </div>
-
-                <p className="mt-1 text-[13px] font-medium text-white/30">{day.workout_type}</p>
-                {day.notes && <p className="mt-1 text-[11px] leading-relaxed text-white/25">{day.notes}</p>}
-            </article>
-        );
-    }
-
-    return (
-        <article
-            onClick={(event) => onSelect(event.currentTarget)}
-            onKeyDown={handleKeyDown}
-            role="button"
-            tabIndex={0}
-            aria-label={`Open ${day.day} session details`}
-            className={`plan-session group flex cursor-pointer flex-col p-4 transition-colors duration-150 plan-session-action plan-focus ${isToday ? "is-today" : ""}`}
-        >
-            <div className="flex items-baseline justify-between gap-2">
-                <p className="text-[11px] text-white/40">{day.day}</p>
-                <p className="text-[11px] text-white/25">{formatDate(day.date)}</p>
-            </div>
-
-            <p className="mt-3 text-[13px] font-medium text-white">{day.workout_type}</p>
-
-            {zoneLabel(day.intensity_zone) && (
-                <p className="plan-zone-word mt-1 text-[13px] font-semibold">{zoneLabel(day.intensity_zone)}</p>
+            ) : (
+                <button
+                    onClick={(event) => onSelect(event.currentTarget)}
+                    onKeyDown={handleKeyDown}
+                    aria-label={`Open ${day.day} ${formatDate(day.date)} — ${day.workout_type}`}
+                    className={`plan-day plan-day--workout${isToday ? " is-today" : ""}`}
+                >
+                    {content}
+                </button>
             )}
-
-            <p className="mt-1 text-3xl font-medium tabular-nums tracking-tight">
-                {day.distance_km}
-                <span className="ml-1 text-xs font-normal text-white/40">km</span>
-            </p>
-
-            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/40">
-                {day.duration_minutes ? <span>{day.duration_minutes} min</span> : null}
-                {day.pace_readable ? <span>{day.pace_readable}</span> : null}
-            </div>
-
-            <MainSet mainSet={day.main_set} />
-
-            <ZoneLadder zone={day.intensity_zone} />
-        </article>
+        </li>
     );
-};
-
-const ZoneLadder = ({ zone }) => {
-    const active = zoneStep(zone);
-
-    if (active === -1) return null;
-
-    return (
-        <span className="plan-zone-ladder mt-auto flex items-end gap-[3px] pt-4" aria-hidden="true">
-            {ZONE_LADDER.map((step, index) => (
-                <span
-                    key={step.id}
-                    className={`plan-zone-step${index <= active ? " is-on" : ""}`}
-                    style={{ height: `${6 + index * 4}px` }}
-                />
-            ))}
-        </span>
-    );
-};
-
-const RAIL_CELL = 64;
-const RAIL_TOP = 8;
-const RAIL_BASE = 64;
-
-const humanize = (key) => key.replaceAll("_", " ");
-
-/* The effort ladder, the way a coach reads a week: recovery first, race last. */
-const ZONE_LADDER = [
-    { id: "recovery", label: "Recovery", matches: ["recovery"] },
-    { id: "easy", label: "Easy", matches: ["easy"] },
-    { id: "steady", label: "Steady", matches: ["steady", "aerobic"] },
-    { id: "tempo", label: "Tempo", matches: ["tempo", "threshold"] },
-    { id: "interval", label: "Interval", matches: ["interval", "repetition", "strides"] },
-    { id: "race", label: "Race", matches: ["race"] }
-];
-
-const zoneStep = (zone) => {
-    if (!zone) return -1;
-
-    const value = String(zone).toLowerCase();
-    if (value === "rest") return -1;
-
-    return ZONE_LADDER.findIndex((step) => step.matches.some((token) => value.includes(token)));
-};
-
-const zoneLabel = (zone) => {
-    const step = zoneStep(zone);
-
-    return step === -1 ? null : ZONE_LADDER[step].label;
 };
 
 const asMinutes = (value) => (typeof value === "number" ? `${value} min` : String(value));
@@ -732,55 +763,24 @@ const parseMainSet = (mainSet) => {
     };
 };
 
-const MainSet = ({ mainSet }) => {
-    if (!mainSet) return null;
-
-    const parsed = parseMainSet(mainSet);
-
-    if (!parsed) return null;
-
-    const { headline, recovery, steps } = parsed;
-
-    if (!headline && !recovery && steps.length === 0) return null;
-
-    return (
-        <div className="mt-3 border-t border-white/[0.06] pt-2.5">
-            {headline && (
-                <p className="text-[13px] font-medium leading-snug tabular-nums text-white/85">{headline}</p>
-            )}
-
-            {recovery && (
-                <p className="mt-1 text-[11px] leading-relaxed text-white/40">
-                    <span className="text-white/25">Recovery</span> {recovery}
-                </p>
-            )}
-
-            {steps.length > 0 && (
-                <p className="mt-1 text-[10px] leading-relaxed text-white/30">
-                    {steps.map(({ label, value }) => `${label} ${value}`).join(" · ")}
-                </p>
-            )}
-        </div>
-    );
-};
-
 const SessionPanel = ({ day, closing, onClose }) => {
     const panelRef = useRef(null);
     const parsed = day.main_set ? parseMainSet(day.main_set) : null;
+    const zone = zoneInfo(day.intensity_zone);
 
     const metrics = [
         { label: "Distance", value: day.distance_km, unit: "km" },
         { label: "Duration", value: day.duration_minutes, unit: "min" },
         { label: "Pace", value: day.pace_readable, unit: null },
-        { label: "Zone", value: day.intensity_zone, unit: null }
+        { label: "Zone", value: zone?.label, unit: null, tone: zone?.tone }
     ].filter(({ value }) => value !== undefined && value !== null && value !== "");
 
     useDialogFocus(panelRef, onClose);
 
     return (
-        <div className="fixed inset-0 plan-overlay flex justify-end">
+        <div className="plan-overlay plan-overlay--panel">
             <div
-                className={`absolute inset-0 bg-black/60 ${closing ? "panel-backdrop-out" : "panel-backdrop"}`}
+                className={`plan-scrim${closing ? " is-closing" : ""}`}
                 onClick={onClose}
                 aria-hidden="true"
             />
@@ -790,17 +790,17 @@ const SessionPanel = ({ day, closing, onClose }) => {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="session-title"
-                className={`no-scrollbar relative h-full w-full max-w-md overflow-y-auto border-l border-white/[0.08] plan-overlay-panel p-6 ${closing ? "panel-out" : "panel-in"}`}
+                className={`plan-panel${closing ? " panel-out" : " panel-in"}`}
             >
-                <div className="flex items-start justify-between gap-4">
+                <div className="plan-panel__head">
                     <div>
-                        <p className="plan-detail-meta text-[10px] text-white/35">
+                        <p className="plan-detail__meta">
                             {day.day}
                             {formatDate(day.date) && ` · ${formatDate(day.date)}`}
                         </p>
-                        <h2 id="session-title" className="mt-2 text-2xl font-medium tracking-tight">{day.workout_type}</h2>
+                        <h2 id="session-title">{day.workout_type}</h2>
                         {day.description && (
-                            <p className="mt-1.5 text-sm leading-relaxed text-white/40">{day.description}</p>
+                            <p className="plan-panel__description">{day.description}</p>
                         )}
                     </div>
 
@@ -808,20 +808,26 @@ const SessionPanel = ({ day, closing, onClose }) => {
                         onClick={onClose}
                         autoFocus
                         aria-label="Close session details"
-                        className="grid size-8 shrink-0 cursor-pointer place-content-center border border-white/[0.08] text-white/40 transition-colors duration-150 hover:border-white/20 hover:text-white plan-focus"
+                        className="plan-icon-btn"
                     >
-                        <X className="h-4 w-4" />
+                        <X aria-hidden="true" />
                     </button>
                 </div>
 
                 {metrics.length > 0 && (
-                    <div className="mt-6 grid grid-cols-2 gap-px border border-white/[0.06] bg-white/[0.06]">
-                        {metrics.map(({ label, value, unit }) => (
-                            <div key={label} className="plan-detail-metric p-4">
-                                <p className="text-[10px] text-white/30">{label}</p>
-                                <p className="mt-1.5 text-xl font-medium leading-none tabular-nums">
-                                    {value}
-                                    {unit && <span className="ml-1 text-[11px] font-normal text-white/40">{unit}</span>}
+                    <div className="plan-detail__metrics">
+                        {metrics.map(({ label, value, unit, tone }) => (
+                            <div key={label} className="plan-detail__metric">
+                                <p className="plan-detail__label">{label}</p>
+                                <p className="plan-detail__value">
+                                    {tone ? (
+                                        <span className={`plan-zone plan-zone--${tone}`}>{value}</span>
+                                    ) : (
+                                        <>
+                                            {value}
+                                            {unit && <span>{unit}</span>}
+                                        </>
+                                    )}
                                 </p>
                             </div>
                         ))}
@@ -829,25 +835,25 @@ const SessionPanel = ({ day, closing, onClose }) => {
                 )}
 
                 {parsed && (
-                    <div className="mt-6">
-                        <p className="text-[10px] text-white/30">Session</p>
+                    <div className="plan-detail__block">
+                        <p className="plan-detail__label">Session</p>
 
                         {parsed.headline && (
-                            <p className="mt-2 text-lg font-medium leading-snug tabular-nums">{parsed.headline}</p>
+                            <p className="plan-detail__headline">{parsed.headline}</p>
                         )}
 
                         {(parsed.recovery || parsed.steps.length > 0) && (
-                            <dl className="mt-3 space-y-1.5">
+                            <dl className="plan-detail__list">
                                 {parsed.recovery && (
-                                    <div className="flex gap-4">
-                                        <dt className="w-20 shrink-0 text-xs text-white/30">Recovery</dt>
-                                        <dd className="text-xs leading-relaxed text-white/55">{parsed.recovery}</dd>
+                                    <div>
+                                        <dt>Recovery</dt>
+                                        <dd>{parsed.recovery}</dd>
                                     </div>
                                 )}
                                 {parsed.steps.map(({ label, value }) => (
-                                    <div key={`${label}-${value}`} className="flex gap-4">
-                                        <dt className="w-20 shrink-0 text-xs capitalize text-white/30">{label}</dt>
-                                        <dd className="text-xs leading-relaxed text-white/55">{value}</dd>
+                                    <div key={`${label}-${value}`}>
+                                        <dt>{label}</dt>
+                                        <dd>{value}</dd>
                                     </div>
                                 ))}
                             </dl>
@@ -856,9 +862,9 @@ const SessionPanel = ({ day, closing, onClose }) => {
                 )}
 
                 {day.notes && (
-                    <div className="mt-6 border-t border-white/[0.06] pt-4">
-                        <p className="text-[10px] text-white/30">Notes</p>
-                        <p className="mt-2 text-[13px] leading-relaxed text-white/60">{day.notes}</p>
+                    <div className="plan-detail__notes">
+                        <p className="plan-detail__label">Notes</p>
+                        <p>{day.notes}</p>
                     </div>
                 )}
             </section>
@@ -907,68 +913,57 @@ const RegenerateDialog = ({ phase, currentWeek, totalWeeks, startDate, endDate, 
     const destructive = phase === "active";
 
     return (
-        <div className="fixed inset-0 plan-overlay grid place-items-center p-4">
-            <div className="panel-backdrop absolute inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
+        <div className="plan-overlay plan-overlay--dialog">
+            <div className="plan-scrim" onClick={onClose} aria-hidden="true" />
 
             <section
                 ref={panelRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="regenerate-title"
-                className="dialog-in relative w-full max-w-md border border-white/[0.08] plan-dialog p-6"
+                className="plan-dialog dialog-in"
             >
-                <div className="flex items-start justify-between gap-4">
-                    <h2 id="regenerate-title" className="text-lg font-medium tracking-tight">{title}</h2>
+                <div className="plan-dialog__head">
+                    <h2 id="regenerate-title">{title}</h2>
 
                     <button
                         onClick={onClose}
                         autoFocus
                         aria-label="Close dialog"
-                        className="grid size-7 shrink-0 cursor-pointer place-content-center border border-white/[0.08] text-white/40 transition-colors duration-150 hover:border-white/20 hover:text-white plan-focus"
+                        className="plan-icon-btn"
                     >
-                        <X className="h-3.5 w-3.5" />
+                        <X aria-hidden="true" />
                     </button>
                 </div>
 
-                <p className="mt-3 text-[13px] leading-relaxed text-white/50">{description}</p>
+                <p className="plan-dialog__copy">{description}</p>
 
-                <ul className="mt-4 space-y-2">
+                <ul className="plan-dialog__list">
                     {consequences.map((item) => (
-                        <li key={item} className="flex gap-2.5 text-xs leading-relaxed text-white/40">
-                            <span className="mt-[7px] h-px w-2 shrink-0 bg-white/25" aria-hidden="true" />
-                            {item}
-                        </li>
+                        <li key={item}>{item}</li>
                     ))}
                 </ul>
 
                 {requiresAcknowledgment && (
-                    <label className="mt-5 flex cursor-pointer items-start gap-2.5 border border-white/[0.06] p-3 text-xs leading-relaxed text-white/50">
+                    <label className="plan-check">
                         <input
                             type="checkbox"
                             checked={acknowledged}
                             onChange={(event) => setAcknowledged(event.target.checked)}
-                            className="plan-checkbox mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer"
                         />
-                        I understand my plan restarts at week 1
+                        <span>I understand my plan restarts at week 1</span>
                     </label>
                 )}
 
-                <div className="mt-6 flex items-center justify-end gap-4">
-                    <button
-                        onClick={onClose}
-                        className="cursor-pointer text-xs text-white/40 transition-colors duration-150 hover:text-white plan-focus"
-                    >
+                <div className="plan-dialog__actions">
+                    <button onClick={onClose} className="plan-btn plan-btn--ghost">
                         Cancel
                     </button>
 
                     <button
                         onClick={onConfirm}
                         disabled={requiresAcknowledgment && !acknowledged}
-                        className={`cursor-pointer border px-4 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                            destructive
-                                ? "plan-danger-button"
-                                : "plan-primary-button"
-                        }`}
+                        className={`plan-btn ${destructive ? "plan-btn--danger" : "plan-btn--dark"}`}
                     >
                         {confirmLabel}
                     </button>
